@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/micro-plat/ddns/services/dns"
+	"github.com/micro-plat/ddns/dns"
 	"github.com/micro-plat/hydra/component"
 )
 
