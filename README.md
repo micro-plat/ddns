@@ -12,7 +12,7 @@
 
 √  缓存所有解析结果，缩短请求响应时长
 
-√  基于hydra实现
+√  基于[hydra](https://github.com/micro-plat/hydra)实现
 
 #### 适用场景：
 
