@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/micro-plat/ddns/services"
+	"github.com/micro-plat/ddns/services/dns"
 	"github.com/micro-plat/hydra/component"
 )
 
@@ -10,9 +10,16 @@ func (app *ddns) init() {
 
 	app.install()
 	app.handling()
-	dns := services.NewServer()
+
+	var server *dns.Server
 	app.Initializing(func(c component.IContainer) error {
-		dns.Start()
+		//初始化注册中查询服务
+		server = dns.NewServer(c)
+		return server.Start()
+	})
+	app.Closing(func(c component.IContainer) error {
+
+		server.Shutdown()
 		return nil
 	})
 }
