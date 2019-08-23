@@ -16,6 +16,7 @@ type IQuery interface {
 
 //localQueries 本地查询服务
 var localQueries = make(map[string]IQuery)
+var queries = []IQuery{}
 
 //Register 注册查询服务
 func Register(name string, query IQuery) {
@@ -23,9 +24,10 @@ func Register(name string, query IQuery) {
 		panic(fmt.Sprintf("%s:重复注册查询服务", name))
 	}
 	localQueries[name] = query
+	queries = append(queries, query)
 }
 func Lookup(name string) []net.IP {
-	for _, q := range localQueries {
+	for _, q := range queries {
 		if lst := q.Lookup(name); len(lst) > 0 {
 			return lst
 		}
