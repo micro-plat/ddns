@@ -12,7 +12,7 @@
 √ 　解决 windows 只能配置 2 个 DNS 服务器地址问题
 √ 　基于[hydra](https://github.com/micro-plat/hydra)实现
 
-## 1. 使用方法
+## 1. 快速使用
 
 - 下载
 
