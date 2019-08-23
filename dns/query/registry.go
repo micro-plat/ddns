@@ -2,7 +2,6 @@ package query
 
 import (
 	"net"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -17,8 +16,8 @@ type Registry struct {
 	r       registry.IRegistry
 	root    string
 	domain  map[string][]net.IP
-	watcher *watcher.Watcher
-	notify  chan *watcher.ContentChangeArgs
+	watcher *watcher.ChildrenWatcher
+	notify  chan *watcher.ChildrenChangeArgs
 	log     logger.ILogger
 	closeCh chan struct{}
 	lk      sync.Mutex
@@ -32,7 +31,7 @@ func NewRegistry(r registry.IRegistry, log logger.ILogger) *Registry {
 		domain:  make(map[string][]net.IP),
 		log:     log,
 		closeCh: make(chan struct{}),
-		watcher: watcher.NewWatcher("/dns", time.Second*10, r, log),
+		watcher: watcher.NewChildrenWatcher("/dns", 2, time.Second*10, r, log),
 	}
 	return registry
 }
@@ -51,12 +50,11 @@ func (r *Registry) loopWatch() {
 		select {
 		case <-r.closeCh:
 			return
-		case <-r.notify:
-			r.log.Infof("%s发生变更", r.root)
-			if err := r.load(); err != nil {
+		case n := <-r.notify:
+			if err := r.load(n.Parent, n.Name); err != nil {
 				r.log.Error(err)
 			}
-			r.log.Infof("[启用 注册中心,%d条]", len(r.domain))
+
 		}
 	}
 }
@@ -76,23 +74,29 @@ func (r *Registry) Close() error {
 }
 
 //Load 加载所有域名的IP信息
-func (r *Registry) load() error {
-	ndomain := make(map[string][]net.IP)
-	domains, _, err := r.r.GetChildren(r.root)
+func (r *Registry) load(path string, name string) error {
+	if b, err := r.r.Exists(path); !b && err == nil {
+		r.lk.Lock()
+		delete(r.domain, name)
+		r.lk.Unlock()
+		r.log.Infof("[注册中心:%s,0条]", path)
+		return nil
+	}
+	ips, _, err := r.r.GetChildren(path)
 	if err != nil {
-		return err
+		return nil
 	}
-	for _, d := range domains {
-		ips, _, err := r.r.GetChildren(filepath.Join(r.root, d))
-		if err != nil {
-			return err
-		}
-		ndomain[d] = getIPs(ips)
-	}
+	nips := getIPs(ips)
 	//修改本地域名缓存
 	r.lk.Lock()
-	r.domain = ndomain
+	switch {
+	case len(nips) == 0:
+		delete(r.domain, name)
+	default:
+		r.domain[name] = nips
+	}
 	r.lk.Unlock()
+	r.log.Infof("[注册中心:%s,%d条]", name, len(nips))
 	return nil
 }
 
@@ -104,4 +108,13 @@ func getIPs(lst []string) []net.IP {
 		ips = append(ips, net.ParseIP(args[0]))
 	}
 	return ips
+}
+func (r *Registry) len() int {
+	r.lk.Lock()
+	defer r.lk.Unlock()
+	count := 0
+	for _, domain := range r.domain {
+		count += len(domain)
+	}
+	return count
 }

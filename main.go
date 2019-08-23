@@ -12,7 +12,8 @@ func main() {
 		hydra.NewApp(
 			hydra.WithPlatName("ddns"),
 			hydra.WithSystemName("ddns"),
-			hydra.WithServerTypes("api")),
+			hydra.WithServerTypes("api"),
+			hydra.WithClusterName("dns")),
 	}
 
 	app.init()

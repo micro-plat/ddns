@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/micro-plat/ddns/dns"
+	"github.com/micro-plat/ddns/services"
 	"github.com/micro-plat/hydra/component"
 )
 
@@ -22,4 +23,5 @@ func (app *ddns) init() {
 		server.Shutdown()
 		return nil
 	})
+	app.Micro("/ddns/request", services.NewDdnsHandler)
 }

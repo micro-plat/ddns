@@ -14,8 +14,6 @@ import (
 
 //Hosts 本地Host读取配置
 type Hosts struct {
-	root    string
-	file    string
 	closeCh chan struct{}
 	watcher *fsnotify.Watcher
 	log     logger.ILogger
@@ -27,8 +25,7 @@ type Hosts struct {
 func NewHosts(log logger.ILogger) *Hosts {
 
 	hosts := &Hosts{
-		root:    "/etc",
-		file:    "/etc/hosts*",
+
 		closeCh: make(chan struct{}),
 		log:     log,
 	}
@@ -41,7 +38,7 @@ func (f *Hosts) Start() (err error) {
 	if err != nil {
 		return err
 	}
-	if err := f.watcher.Add(f.root); err != nil {
+	if err := f.watcher.Add(HOST_ROOT); err != nil {
 		return err
 	}
 	err = f.loadAll()
@@ -122,7 +119,7 @@ func (f *Hosts) loopWatch() {
 }
 
 func (f *Hosts) loadAll() error {
-	files, err := filepath.Glob(f.file)
+	files, err := filepath.Glob(HOST_FILE)
 	if err != nil {
 		return err
 	}

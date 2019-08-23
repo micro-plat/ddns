@@ -8,16 +8,15 @@ import (
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/micro-plat/ddns/dns/query"
 	"github.com/micro-plat/lib4go/file"
 	"github.com/micro-plat/lib4go/logger"
 )
 
-var defNames = []string{"114.114.114.114", "8.8.8.8"}
+var defNames = []string{"119.6.6.6", "61.139.2.69", "114.114.114.114", "8.8.8.8"}
 
 //Names 本地name server读取配置
 type Names struct {
-	dir     string
-	file    string
 	closeCh chan struct{}
 	watcher *fsnotify.Watcher
 	log     logger.ILogger
@@ -28,8 +27,6 @@ type Names struct {
 //NewNames 创建本地host文件读取对象
 func NewNames(log logger.ILogger) *Names {
 	names := &Names{
-		dir:     "/etc",
-		file:    "/etc/names.conf",
 		closeCh: make(chan struct{}),
 		log:     log,
 	}
@@ -45,7 +42,7 @@ func (f *Names) Start() (err error) {
 	if err != nil {
 		return err
 	}
-	if err := f.watcher.Add(f.dir); err != nil {
+	if err := f.watcher.Add(query.NAME_ROOT); err != nil {
 		return err
 	}
 	err = f.reload()
@@ -84,7 +81,7 @@ func (f *Names) loopWatch() {
 		case <-f.closeCh:
 			return
 		case event := <-f.watcher.Events:
-			if event.Name != f.file {
+			if event.Name != query.NAME_FILE {
 				continue
 			}
 			switch event.Op {
@@ -103,7 +100,7 @@ func (f *Names) loopWatch() {
 }
 
 func (f *Names) reload() error {
-	names, err := f.load(f.file)
+	names, err := f.load(query.NAME_FILE)
 	if err != nil {
 		return err
 	}
@@ -144,14 +141,14 @@ func (f *Names) load(path string) ([]string, error) {
 	return names, nil
 }
 func (f *Names) checkAndCreateConf() error {
-	_, err := os.Stat(f.file)
+	_, err := os.Stat(query.NAME_FILE)
 	if err == nil {
 		return nil
 	}
 	if !os.IsNotExist(err) {
 		return err
 	}
-	fwriter, err := file.CreateFile(f.file)
+	fwriter, err := file.CreateFile(query.NAME_FILE)
 	if err != nil {
 		return err
 	}
