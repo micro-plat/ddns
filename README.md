@@ -145,3 +145,7 @@ sudo vim /etc/names.conf
 
 "/etc/names.conf" 2L
 ```
+
+## 7. 优先级
+
+注册中心 > 本地 HOSTS > 上游 DNS
