@@ -49,21 +49,21 @@ github.com/json-iterator/go
 github.com/mattn/go-isatty
 # github.com/mholt/archiver v3.1.1+incompatible
 github.com/mholt/archiver
-# github.com/micro-plat/hydra v0.10.13
+# github.com/micro-plat/hydra v0.10.13 => ../../../github.com/micro-plat/hydra
 github.com/micro-plat/hydra/component
-github.com/micro-plat/hydra/context
 github.com/micro-plat/hydra/hydra
 github.com/micro-plat/hydra/registry
 github.com/micro-plat/hydra/registry/watcher
+github.com/micro-plat/hydra/context
 github.com/micro-plat/hydra/conf
 github.com/micro-plat/hydra/rpc
-github.com/micro-plat/hydra/dlock
 github.com/micro-plat/hydra/conf/creator
 github.com/micro-plat/hydra/hydra/daemon
 github.com/micro-plat/hydra/hydra/impt
 github.com/micro-plat/hydra/hydra/rpclog
 github.com/micro-plat/hydra/hydra/rqs
 github.com/micro-plat/hydra/servers
+github.com/micro-plat/hydra/dlock
 github.com/micro-plat/hydra/rpc/balancer
 github.com/micro-plat/hydra/servers/rpc/pb
 github.com/micro-plat/hydra/engines
@@ -93,11 +93,11 @@ github.com/micro-plat/lib4go/db
 github.com/micro-plat/lib4go/influxdb
 github.com/micro-plat/lib4go/queue
 github.com/micro-plat/lib4go/jsons
+github.com/micro-plat/lib4go/utility
+github.com/micro-plat/lib4go/registry
 github.com/micro-plat/lib4go/rpc
 github.com/micro-plat/lib4go/security/jwt
 github.com/micro-plat/lib4go/security/md5
-github.com/micro-plat/lib4go/utility
-github.com/micro-plat/lib4go/registry
 github.com/micro-plat/lib4go/security/des
 github.com/micro-plat/lib4go/db/tpl
 github.com/micro-plat/lib4go/influxdb/models
@@ -148,6 +148,8 @@ github.com/shirou/gopsutil/cpu
 github.com/shirou/gopsutil/disk
 github.com/shirou/gopsutil/mem
 github.com/shirou/gopsutil/internal/common
+# github.com/sparrc/go-ping v0.0.0-20190613174326-4e5b6552494c
+github.com/sparrc/go-ping
 # github.com/ugorji/go v1.1.4
 github.com/ugorji/go/codec
 # github.com/ulikunitz/xz v0.5.6
@@ -181,6 +183,7 @@ golang.org/x/crypto/ed25519/internal/edwards25519
 # golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
+golang.org/x/net/icmp
 golang.org/x/net/context
 golang.org/x/net/bpf
 golang.org/x/net/internal/iana
