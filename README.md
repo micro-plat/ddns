@@ -3,14 +3,23 @@
 提供简单、快速的 DNS 缓存服务
 
 √ 　支持 windows,linux
+
 √ 　支持从`hosts`(`/etc/hosts*`,`C:\Windows\System32\drivers\etc\hosts*`)读取配置信息
+
 √ 　支持从`/etc/names.conf`,`C:\Windows\System32\drivers\etc\names.conf`读取上游 DNS 服务器 IP
+
 √ 　支持从注册中心`/dns`读取配置
+
 √ 　支持`hydra`应用注册的`dns`服务，并立即生效
+
 √ 　缓存上游 DNS 解析结果，加快响应速度
+
 √ 　所有配置热更新，无需重启服务
+
 √ 　上游 DNS 服务器检测，优先使用速度最快的服务器
+
 √ 　解决 windows 只能配置 2 个 DNS 服务器地址问题
+
 √ 　基于[hydra](https://github.com/micro-plat/hydra)实现
 
 ## 1. 快速使用
