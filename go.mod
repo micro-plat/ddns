@@ -12,4 +12,4 @@ require (
 	github.com/sparrc/go-ping v0.0.0-20190613174326-4e5b6552494c
 )
 
-replace github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra
+//replace github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra
