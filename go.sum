@@ -73,6 +73,8 @@ github.com/micro-plat/hydra v0.10.13 h1:PI6VaSc+rCmxw05XAW95EtAzM5SWSxAvfIZc+Fvm
 github.com/micro-plat/hydra v0.10.13/go.mod h1:luismF3R8PjhdQTexrwdVav5KfbkEkVJKiVj9hU1WEQ=
 github.com/micro-plat/hydra v0.10.14 h1:Vz/jj9DIK9blgiXJsgKOkIXx9buyb43Z+/Do+XDjVbY=
 github.com/micro-plat/hydra v0.10.14/go.mod h1:luismF3R8PjhdQTexrwdVav5KfbkEkVJKiVj9hU1WEQ=
+github.com/micro-plat/hydra v0.10.15 h1:2kfsgbbERBI6P8+yPDslKq2piUBZvsoSnAEL2a6PrTk=
+github.com/micro-plat/hydra v0.10.15/go.mod h1:BU8u7/gFeB8sEfaNkGVSyBFw9hCnPtXcNevnq05ZskE=
 github.com/micro-plat/lib4go v0.0.0-20190705091641-a9c3303797f1/go.mod h1:zrC6IThH4iNBu3XkjduKLC+TulO/h3XZ6sWEsFx+YQY=
 github.com/micro-plat/lib4go v0.1.1/go.mod h1:QWcBeMuPBuQSm8sr0wq2DwfL864Nj6gyvDGt1bKDZTw=
 github.com/micro-plat/lib4go v0.1.5 h1:OVk8kpTqlt3LZzSZkG2nzBQpYBb91jX89DscaG8Luv4=
