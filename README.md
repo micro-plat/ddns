@@ -2,7 +2,7 @@
 
 提供简单、快速的 DNS 缓存服务
 
-√ 　支持 windows,linux
+√ 　支持 windows,linux,macos
 
 √ 　支持从`hosts`(`/etc/hosts*`,`C:\Windows\System32\drivers\etc\hosts*`)读取配置信息
 
