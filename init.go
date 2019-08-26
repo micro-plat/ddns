@@ -10,7 +10,6 @@ import (
 func (app *ddns) init() {
 
 	app.install()
-	app.handling()
 
 	var server *dns.Server
 	app.Initializing(func(c component.IContainer) error {

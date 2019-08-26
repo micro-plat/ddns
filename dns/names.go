@@ -104,10 +104,21 @@ func (f *Names) reload() error {
 	if err != nil {
 		return err
 	}
+	nNames := f.sortByTTL(names)
+	for i, nm := range nNames {
+		nNames[i] = net.JoinHostPort(nm, "53")
+	}
 	f.lk.Lock()
 	defer f.lk.Unlock()
-	f.names = names
+	f.names = nNames
 	return nil
+}
+func (f *Names) sortByTTL(names []string) []string {
+	sorted, err := getSortedServer(names...)
+	if err != nil {
+		return names
+	}
+	return sorted
 }
 
 //load 加载配置文件，并读取指定的文件内容
@@ -134,7 +145,7 @@ func (f *Names) load(path string) ([]string, error) {
 		}
 		if _, ok := ips[line]; !ok {
 			ips[line] = line
-			names = append(names, net.JoinHostPort(line, "53"))
+			names = append(names, line)
 		}
 
 	}

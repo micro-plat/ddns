@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/micro-plat/hydra/registry"
@@ -13,27 +12,27 @@ type Domain struct {
 	IP     string `form:"ip" json:"ip" valid:"ip,required"`
 }
 
-func checkAndCreate(domain *Domain, registry registry.IRegistry) interface{} {
+func checkAndCreate(domain *Domain, r registry.IRegistry) interface{} {
 
-	root := filepath.Join("/dns", domain.Domain)
-	path := filepath.Join(root, domain.IP)
+	root := registry.Join("/dns", domain.Domain)
+	path := registry.Join(root, domain.IP)
 
-	b, err := registry.Exists(root)
+	b, err := r.Exists(root)
 	if err != nil {
 		return err
 	}
 	if b {
-		paths, _, err := registry.GetChildren(root)
+		paths, _, err := r.GetChildren(root)
 		if err != nil {
 			return err
 		}
 		for _, pc := range paths {
-			if err := registry.Delete(filepath.Join(root, pc)); err != nil {
+			if err := r.Delete(registry.Join(root, pc)); err != nil {
 				return err
 			}
 		}
 	}
-	if err := registry.CreatePersistentNode(path,
+	if err := r.CreatePersistentNode(path,
 		fmt.Sprintf(`{"time":%d}`, time.Now().Unix())); err != nil {
 		return err
 	}
