@@ -23,7 +23,7 @@ var (
 func recovery(logger logger.ILogger, w dns.ResponseWriter, req *dns.Msg) {
 	if err := recover(); err != nil {
 		stack := stack(3)
-		logger.Printf("[Recovery] %s panic recovered:\n%s\n%s\n%s%s", timeFormat(time.Now()), err, stack, reset)
+		logger.Printf("[Recovery] %s panic recovered:\n%s\n%s\n%s", timeFormat(time.Now()), err, stack, reset)
 		dns.HandleFailed(w, req)
 	}
 }

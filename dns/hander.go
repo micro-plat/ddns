@@ -3,6 +3,7 @@ package dns
 import (
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/micro-plat/hydra/component"
@@ -24,7 +25,7 @@ func NewHandler(c component.IContainer, log logger.ILogger) (*DNSHandler, error)
 	if err != nil {
 		return nil, err
 	}
-	resolver, err := NewResolver()
+	resolver, err := NewResolver(log)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (h *DNSHandler) lookupFromLocal(ip net.IP, question *Question, q dns.Questi
 	return m, nil
 }
 
-func (h *DNSHandler) do(net string, fromIP net.IP, w dns.ResponseWriter, req *dns.Msg) string {
+func (h *DNSHandler) do(net string, fromIP net.IP, w dns.ResponseWriter, req *dns.Msg) (string, *dns.Msg, error) {
 	//从缓存中查询
 	cache := true
 	msg, err := h.lookupFromLocal(fromIP, NewQuestion(req.Question[0]), req.Question[0])
@@ -88,13 +89,13 @@ func (h *DNSHandler) do(net string, fromIP net.IP, w dns.ResponseWriter, req *dn
 		msg, cache, err = h.remote.Lookup(net, req) //从名称服务中查询
 	}
 	if err != nil {
-		panic(err)
+		return "", nil, err
 	}
 
 	//处理响应
 	msg.SetReply(req)
 	w.WriteMsg(msg)
-	return types.DecodeString(cache, true, "C", "R")
+	return types.DecodeString(cache, true, "C", "R"), msg, nil
 }
 
 //Do 处理请求
@@ -112,10 +113,29 @@ func (h *DNSHandler) Do(proto string) func(w dns.ResponseWriter, req *dns.Msg) {
 		}
 		log.Info("dns.request", proto, req.Question[0].Name, "from", ip)
 
-		from := h.do(proto, ip, w, req)
-		log.Info("dns.response", proto, from, time.Since(start))
+		from, msg, err := h.do(proto, ip, w, req)
+		if err != nil {
+			log.Error(err)
+		}
+		if msg == nil {
+			log.Warn("dns.response", proto, req.Question[0].Name, "[nil]", from, time.Since(start))
+			return
+		}
+		if len(msg.Answer) == 0 {
+			log.Warn("dns.response", proto, req.Question[0].Name, "[0]", from, time.Since(start))
+			return
+		}
+		log.Info("dns.response", proto, getAnswer(msg), from, time.Since(start))
 	}
 
+}
+func getAnswer(r *dns.Msg) string {
+	for _, answer := range r.Answer {
+		if answer != nil {
+			return fmt.Sprintf("[%s ...%d]", strings.Replace(answer.String(), "\t", " ", -1), len(r.Answer))
+		}
+	}
+	return ""
 }
 
 //Close 关闭处理程序

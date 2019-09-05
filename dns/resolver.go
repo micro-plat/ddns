@@ -17,37 +17,48 @@ type IResolver interface {
 type Resolver struct {
 	cache *cache.Cache
 	names *Names
+	log   logger.ILogger
 }
 
-func NewResolver() (*Resolver, error) {
-	name := NewNames(logger.New("ddns_names"))
+func NewResolver(log logger.ILogger) (*Resolver, error) {
+	name := NewNames(log)
 	if err := name.Start(); err != nil {
 		return nil, err
 	}
 	return &Resolver{
 		cache: cache.New(5*time.Minute, 10*time.Minute),
 		names: name,
+		log:   log,
 	}, nil
 }
 
-//Lookup 循环所有名称服务器，以最快速度拿取解析信息，所有名称服务器都未能成功拿到解析信息则返回失败
+//Lookup 循环所有名称服务器，以最快速度拿取解析信息，所有名称服务器都未能成功,再次从缓存中获取
 func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache bool, err error) {
 
 	//查询本地缓存
-	msg, ok := r.lookupFromCache(req)
+	cmsg, ok := r.lookupFromCache(req)
 	if ok {
-		return msg, true, nil
+		return cmsg, true, nil
 	}
 
 	//查询远程服务
-	msg, err = r.lookupFromRemote(net, req)
+	rmsg, err := r.lookupFromRemote(net, req)
 	if err != nil {
 		return nil, false, err
 	}
 
 	//保存缓存
-	r.save2Cache(req.Question[0].Name, msg)
-	return msg, false, nil
+	if len(rmsg.Answer) > 0 {
+		r.save2Cache(req.Question[0].Name, rmsg)
+		return rmsg, false, nil
+	}
+
+	//再次从缓存中拉取，解决并发请求时部分请求未能从名称服务器中获取到结果的问题
+	cmsg, ok = r.lookupFromCache(req)
+	if ok {
+		return cmsg, true, nil
+	}
+	return rmsg, true, nil
 
 }
 
@@ -73,41 +84,46 @@ func (r *Resolver) lookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	//查询名称服务器，并处理结果
 	c := &dns.Client{
 		Net:          net,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
+		ReadTimeout:  time.Second * 3,
+		WriteTimeout: time.Second * 3,
 	}
 	if net == "udp" {
 		req = req.SetEdns0(65535, true)
 	}
+	logger := logger.New("ctx")
 	qname := req.Question[0].Name
-	res := make(chan *dns.Msg, 1)
+	response := make(chan *dns.Msg, 1)
 	var wg sync.WaitGroup
 	lookup := func(nameserver string) {
 		defer wg.Done()
-		r, _, err := c.Exchange(req, nameserver)
-		if err != nil {
+
+		res, _, err1 := c.Exchange(req, nameserver)
+		logger.Debug("exchange:", nameserver, res, err1)
+		if err1 != nil {
+			err = fmt.Errorf("%v,%v", err, err1)
 			return
 		}
-		if r != nil && r.Rcode != dns.RcodeSuccess {
-			if r.Rcode == dns.RcodeServerFailure {
+		if res != nil {
+			if res.Rcode == dns.RcodeServerFailure {
 				return
 			}
 		}
 		select {
-		case res <- r:
+		case response <- res:
 		default:
 		}
 	}
 
 	//循环所有名称服务器，每个服务器等待200毫秒，未拿到解析结果则发起下一个名称解析
-	ticker := time.NewTicker(time.Millisecond * 200)
+	ticker := time.NewTicker(time.Millisecond * 100)
 	defer ticker.Stop()
 	names := r.names.Lookup()
+	logger.Debug("lookup:", names)
 	for _, host := range names {
 		wg.Add(1)
 		go lookup(host)
 		select {
-		case re := <-res:
+		case re := <-response:
 			return re, nil
 		case <-ticker.C:
 			continue
@@ -117,9 +133,10 @@ func (r *Resolver) lookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 
 	//处理返回结果
 	select {
-	case re := <-res:
+	case re := <-response:
 		return re, nil
 	default:
-		return nil, fmt.Errorf("无法解析的域名:%s", qname)
+		logger.Debugf("无法解析的域名:%s[%v](%v)", qname, names, err)
+		return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
 	}
 }

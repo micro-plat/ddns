@@ -43,6 +43,7 @@ func getSortedServer(server ...string) ([]string, error) {
 			lst = append(lst, &pingStat{server: s, err: err})
 			return
 		}
+		pinger.Timeout = time.Second
 		pinger.SetPrivileged(true)
 		pinger.Count = 3
 		pinger.Run() // blocks until finished

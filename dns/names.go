@@ -13,7 +13,7 @@ import (
 	"github.com/micro-plat/lib4go/logger"
 )
 
-var defNames = []string{"119.6.6.6", "61.139.2.69", "114.114.114.114", "8.8.8.8"}
+var defNames = []string{"114.114.114.114", "8.8.8.8"}
 
 //Names 本地name server读取配置
 type Names struct {
