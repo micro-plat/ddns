@@ -49,7 +49,7 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 
 	//保存缓存
 	if len(rmsg.Answer) > 0 {
-		r.save2Cache(req.Question[0].Name, rmsg)
+		// r.save2Cache(req.Question[0].Name, rmsg)
 		return rmsg, false, nil
 	}
 

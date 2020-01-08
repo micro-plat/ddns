@@ -91,7 +91,6 @@ func (h *DNSHandler) do(net string, fromIP net.IP, w dns.ResponseWriter, req *dn
 	if err != nil {
 		return "", nil, err
 	}
-
 	//处理响应
 	msg.SetReply(req)
 	w.WriteMsg(msg)
