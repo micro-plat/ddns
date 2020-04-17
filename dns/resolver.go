@@ -49,10 +49,8 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 
 	//保存缓存
 	if len(rmsg.Answer) > 0 {
-		// r.save2Cache(req.Question[0].Name, rmsg)
 		return rmsg, false, nil
 	}
-
 	//再次从缓存中拉取，解决并发请求时部分请求未能从名称服务器中获取到结果的问题
 	cmsg, ok = r.lookupFromCache(req)
 	if ok {
@@ -84,8 +82,8 @@ func (r *Resolver) lookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	//查询名称服务器，并处理结果
 	c := &dns.Client{
 		Net:          net,
-		ReadTimeout:  time.Second * 3,
-		WriteTimeout: time.Second * 3,
+		ReadTimeout:  time.Second * 30,
+		WriteTimeout: time.Second * 30,
 	}
 	if net == "udp" {
 		req = req.SetEdns0(65535, true)
@@ -115,7 +113,7 @@ func (r *Resolver) lookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	}
 
 	//循环所有名称服务器，每个服务器等待200毫秒，未拿到解析结果则发起下一个名称解析
-	ticker := time.NewTicker(time.Millisecond * 100)
+	ticker := time.NewTicker(time.Millisecond * 3000)
 	defer ticker.Stop()
 	names := r.names.Lookup()
 	logger.Debug("lookup:", names)
