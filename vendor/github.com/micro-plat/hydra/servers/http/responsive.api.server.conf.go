@@ -85,6 +85,12 @@ func (w *ApiResponsiveServer) SetConf(restart bool, cnf conf.IServerConf) (err e
 	}
 	servers.TraceIf(ok, w.Infof, w.Debugf, getEnableName(ok), "header设置")
 
+	//设置请求头
+	if ok, err = SetResponse(w.server, cnf); err != nil {
+		return err
+	}
+	servers.TraceIf(ok, w.Infof, w.Debugf, getEnableName(ok), "响应格式设置")
+
 	//设置熔断配置
 	if ok, err = SetCircuitBreaker(w.server, cnf); err != nil {
 		return err
@@ -96,6 +102,18 @@ func (w *ApiResponsiveServer) SetConf(restart bool, cnf conf.IServerConf) (err e
 		return err
 	}
 	servers.TraceIf(ok, w.Infof, w.Debugf, getEnableName(ok), "jwt设置")
+
+	//检查固定密钥认证
+	if ok, err = CheckFixedSecret(cnf); err != nil {
+		return err
+	}
+	servers.TraceIf(ok, w.Infof, w.Debugf, getEnableName(ok), "固定密钥认证")
+
+	//检查远程服务认证
+	if ok, err = CheckRemoteAuth(cnf); err != nil {
+		return err
+	}
+	servers.TraceIf(ok, w.Infof, w.Debugf, getEnableName(ok), "远程服务认证")
 
 	//设置ajax请求
 	if ok, err = SetAjaxRequest(w.server, cnf); err != nil {

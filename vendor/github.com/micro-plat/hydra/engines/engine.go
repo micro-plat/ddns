@@ -122,6 +122,11 @@ func (r *ServiceEngine) GetServices() map[string][]string {
 
 }
 
+//GetTags 添加获和取tag接口
+func (r *ServiceEngine) GetTags(name string) []string {
+	return r.StandardComponent.GetTags(name)
+}
+
 //Execute 执行外部请求
 func (r *ServiceEngine) Execute(ctx *context.Context) (rs interface{}) {
 	id := fmt.Sprint(goid())
@@ -129,8 +134,9 @@ func (r *ServiceEngine) Execute(ctx *context.Context) (rs interface{}) {
 	defer r.loggers.Remove(id)
 	if ctx.Request.CircuitBreaker.IsOpen() { //熔断开关打开，则自动降级
 		rf := r.StandardComponent.Fallback(ctx)
-		if r, ok := rf.(error); ok && r == component.ErrNotFoundService {
-			ctx.Response.MustContent(ctx.Request.CircuitBreaker.GetDefStatus(), ctx.Request.CircuitBreaker.GetDefContent())
+		if r, ok := rf.(error); ok && r == component.ErrNotFoundFallbackService {
+			ctx.Response.MustContent(ctx.Request.CircuitBreaker.GetDefStatus(),
+				ctx.Request.CircuitBreaker.GetDefContent())
 		}
 		return rf
 	}
@@ -176,9 +182,13 @@ func (r *ServiceEngine) Execute(ctx *context.Context) (rs interface{}) {
 }
 
 //Handling 每次handle执行前执行
-func (r *ServiceEngine) Handling(c *context.Context) (rs interface{}) {
-	c.SetRPC(r.Invoker)
-	return nil
+func (r *ServiceEngine) Handling(ctx *context.Context) (rs interface{}) {
+	ctx.SetRPC(r.Invoker)
+	err := checkSignByFixedSecret(ctx)
+	if err != nil {
+		return err
+	}
+	return checkSignByRemoteSecret(ctx)
 }
 
 //GetRegistry 获取注册中心

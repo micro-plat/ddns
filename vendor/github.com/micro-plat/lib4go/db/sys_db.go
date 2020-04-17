@@ -107,8 +107,8 @@ func (db *SysDB) Query(query string, args ...interface{}) (dataRows QueryRows, c
 
 }
 
-func resolveRows(rows *sql.Rows, col int) (dataRows []QueryRow, columns []string, err error) {
-	dataRows = make([]QueryRow, 0)
+func resolveRows(rows *sql.Rows, col int) (dataRows QueryRows, columns []string, err error) {
+	dataRows = NewQueryRows()
 	colus, err := rows.Columns()
 	if err != nil {
 		return
@@ -119,8 +119,8 @@ func resolveRows(rows *sql.Rows, col int) (dataRows []QueryRow, columns []string
 	}
 
 	for rows.Next() {
-		row := make(QueryRow)
-		dataRows = append(dataRows, row)
+		row := NewQueryRow(len(columns))
+		dataRows.Append(row)
 		var buffer []interface{}
 		for index := 0; index < len(columns); index++ {
 			var va []byte

@@ -24,6 +24,8 @@ type IContainer interface {
 	conf.IMainConf
 	GetRegistry() registry.IRegistry
 
+	GetTags(name string) []string
+
 	GetRegularCache(names ...string) (c cache.ICache)
 	GetCache(names ...string) (c cache.ICache, err error)
 	GetCacheBy(tpName string, name string) (c cache.ICache, err error)
@@ -120,7 +122,7 @@ func (c *Context) Close() {
 }
 func formatName(name string) string {
 	text := "/" + strings.Trim(strings.Trim(name, " "), "/")
-	return strings.ToLower(text)
+	return text
 }
 
 //MakeSign 检查签名原串

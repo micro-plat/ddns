@@ -2,6 +2,7 @@ package context
 
 import (
 	"fmt"
+	"github.com/micro-plat/lib4go/jsons"
 	"regexp"
 	"strconv"
 	"time"
@@ -22,6 +23,24 @@ func (i *inputParams) Check(names ...string) error {
 }
 func (i *inputParams) Keys() []string {
 	return i.data.Keys()
+}
+
+//GetMaps()  获取所有参数列表
+func (i *inputParams) GetMaps() map[string]string {
+	keys := i.Keys()
+	m := make(map[string]string, len(keys))
+	for _, k := range keys {
+		m[k] = i.GetString(k)
+	}
+	return m
+}
+func (i *inputParams) GetJSON() string {
+	m := i.GetMaps()
+	if len(m) == 0 {
+		return "{}"
+	}
+	buff, _ := jsons.Marshal(m)
+	return string(buff)
 }
 
 func (i *inputParams) Get(name string) (string, bool) {

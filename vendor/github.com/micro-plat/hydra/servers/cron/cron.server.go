@@ -114,7 +114,7 @@ func (s *CronServer) Dynamic(engine servers.IRegistryEngine, c chan *conf.Task) 
 				continue
 			}
 
-			if b, err := govalidator.ValidateStruct(task); !b {
+			if b, err := govalidator.ValidateStruct(task); !b && err != nil {
 				err = fmt.Errorf("task配置有误:%v", err)
 				s.Logger.Error(err)
 				continue
@@ -123,7 +123,10 @@ func (s *CronServer) Dynamic(engine servers.IRegistryEngine, c chan *conf.Task) 
 			if task.Setting == nil {
 				task.Setting = make(map[string]string)
 			}
-			task.Handler = middleware.ContextHandler(engine, task.Name, task.Engine, task.Service, task.Setting, map[string]interface{}{})
+			task.Handler = middleware.ContextHandler(engine, task.Name, task.Engine, task.Service, task.Setting,
+				map[string]interface{}{
+					"path": task.Cron,
+				})
 			ct, err := newCronTask(task)
 			if err != nil {
 				s.Logger.Error("构建cron.task失败:", err)
@@ -134,6 +137,5 @@ func (s *CronServer) Dynamic(engine servers.IRegistryEngine, c chan *conf.Task) 
 			}
 			s.Debugf("[注册定时任务(%s)(%s)]", task.Cron, task.Name)
 		}
-
 	}
 }

@@ -1,5 +1,7 @@
 package context
 
+import "strings"
+
 type meta struct {
 	d map[string]interface{}
 }
@@ -31,6 +33,18 @@ func NewMeta() *Meta {
 		inputParams: inputParams{
 			data: m,
 		},
+	}
+}
+
+//Sets 设置map参数
+func (m *Meta) Sets(i map[string]interface{}) {
+	m.m.d = i
+}
+
+//SetStrings 设置map参数
+func (m *Meta) SetStrings(input map[string]string) {
+	for i, v := range input {
+		m.m.d[strings.ToLower(i)] = v
 	}
 }
 

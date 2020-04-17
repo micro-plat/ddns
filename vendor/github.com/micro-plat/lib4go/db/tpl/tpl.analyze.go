@@ -51,8 +51,7 @@ func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) 
 	params = make([]interface{}, 0)
 	names = make([]string, 0)
 	defer func() {
-		sql = strings.Replace(strings.Replace(strings.Replace(sql, "  ", " ", -1), "where and ", "where", -1), "where or ", "where", -1)
-		sql = strings.Replace(strings.Replace(sql, "WHERE and ", "WHERE", -1), "WHERE or ", "WHERE", -1)
+		sql = replaceSpecialCharacter(sql)
 	}()
 	word, _ := regexp.Compile(`[\\]?[@|#|&|~|\||!|\$|\?]\w?[\.]?\w+`)
 	//@变量, 将数据放入params中
@@ -72,7 +71,7 @@ func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) 
 				params = append(params, value)
 			} else {
 				names = append(names, key)
-				params = append(params, nil)
+				params = append(params, "")
 			}
 			return prefix()
 		case "#":

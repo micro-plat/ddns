@@ -15,7 +15,7 @@ func (s *ApiServer) SetRouters(routers []*conf.Router) (err error) {
 }
 
 //SetJWT Server
-func (s *ApiServer) SetJWT(auth *conf.Auth) error {
+func (s *ApiServer) SetJWT(auth *conf.JWTAuth) error {
 	s.conf.SetMetadata("jwt", auth)
 	return nil
 }
@@ -71,6 +71,12 @@ func (s *ApiServer) SetHeader(headers conf.Headers) error {
 //StopMetric stop metric
 func (s *ApiServer) StopMetric() error {
 	s.metric.Stop()
+	return nil
+}
+
+//SetResponse 设置response配置
+func (s *ApiServer) SetResponse(r *conf.Response) error {
+	s.conf.SetMetadata("__response_conf_", r)
 	return nil
 }
 

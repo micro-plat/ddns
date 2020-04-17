@@ -18,14 +18,14 @@ import (
 )
 
 func getUUID(c *dispatcher.Context) string {
-	sid, ok := c.Request.GetHeader()["__hydra_sid_"]
+	sid, ok := c.Request.GetHeader()["X-Request-Id"]
 	if !ok || sid == "" {
 		return logger.CreateSession()
 	}
 	return sid
 }
 func setUUID(c *dispatcher.Context, id string) {
-	c.Request.GetHeader()["__hydra_sid_"] = id
+	c.Request.GetHeader()["X-Request-Id"] = id
 }
 
 func setStartTime(c *dispatcher.Context) {
@@ -71,6 +71,16 @@ func getCTX(c *dispatcher.Context) *context.Context {
 	}
 	return result.(*context.Context)
 }
+func getExt(c *dispatcher.Context) string {
+	ext := make([]string, 0, 1)
+	if f, ok := c.Get("__ext_param_name_"); ok {
+		ext = append(ext, f.(string))
+	}
+	if v, ok := c.Get("__auth_tag_"); ok {
+		ext = append(ext, v.(string))
+	}
+	return strings.Join(ext, " ")
+}
 func setResponseRaw(c *dispatcher.Context, raw string) {
 	c.Set("__response_raw_", raw)
 }
@@ -79,6 +89,12 @@ func getResponseRaw(c *dispatcher.Context) (string, bool) {
 		return v.(string), true
 	}
 	return "", false
+}
+func setAuthTag(c *dispatcher.Context, ctx *context.Context) {
+	if tag, ok := ctx.Response.GetParams()["__auth_tag_"]; ok {
+		c.Set("__auth_tag_", tag)
+	}
+
 }
 
 //ContextHandler api请求处理程序
@@ -122,7 +138,8 @@ func makeFormData(ctx *dispatcher.Context) IInputData {
 	return newInputData(ctx.Request.GetForm, ctx.PostForm)
 }
 func makeQueyStringData(ctx *dispatcher.Context) IInputData {
-	return nil
+	var p ParamData = make(map[string]string)
+	return p
 }
 func makeParamsData(ctx *dispatcher.Context) IHeaderData {
 	return newHeaderData(ctx.Params, ctx.Params.Get)
@@ -134,31 +151,37 @@ func makeSettingData(ctx *dispatcher.Context, m map[string]string) ParamData {
 func makeExtData(c *dispatcher.Context, ext map[string]interface{}) map[string]interface{} {
 	input := make(map[string]interface{})
 	for k, v := range ext {
-		input[k] = v
+		if strings.HasPrefix(k, "__") {
+			input[k] = v
+			continue
+		}
+		input[fmt.Sprintf("__%s_", k)] = v
 	}
-	input["__hydra_sid_"] = getUUID(c)
+	input["X-Request-Id"] = getUUID(c)
 	input["__method_"] = strings.ToLower(c.Request.GetMethod())
 	input["__header_"] = c.Request.GetHeader()
 	input["__jwt_"] = getJWTRaw(c)
 	input["__func_http_request_"] = c.Request
 	input["__func_http_response_"] = c.Writer
 	input["__binding_"] = func(obj interface{}) error {
-		buffer, err := json.Marshal(c.Request.GetForm())
-		if err != nil {
-			return err
+		form := c.Request.GetForm()
+		var buffer []byte
+		var err error
+		if body, ok := form["__body_"].(string); ok && len(form) == 1 {
+			buffer = []byte(body)
+		} else {
+			buffer, err = json.Marshal(form)
+			if err != nil {
+				return err
+			}
 		}
+
 		d := json.NewDecoder(bytes.NewBuffer(buffer))
 		d.UseNumber()
 		return d.Decode(obj)
 	}
 	input["__binding_with_"] = func(v interface{}, ct string) error {
-		buffer, err := json.Marshal(c.Request.GetForm())
-		if err != nil {
-			return err
-		}
-		d := json.NewDecoder(bytes.NewBuffer(buffer))
-		d.UseNumber()
-		return d.Decode(v)
+		return input["__binding_"].(func(obj interface{}) error)(v)
 	}
 	input["__func_body_get_"] = func(ch string) (string, error) {
 		if s, ok := c.Request.GetForm()["__body_"]; ok {
@@ -211,7 +234,6 @@ func newInputData(v interface{}, get func(string) interface{}) *InputData {
 			input.keys = append(input.keys, k.Key)
 		}
 	}
-
 	return input
 }
 

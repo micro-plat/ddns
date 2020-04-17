@@ -7,6 +7,7 @@ import (
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/servers"
 	"github.com/micro-plat/hydra/servers/pkg/middleware"
+	"github.com/micro-plat/lib4go/types"
 )
 
 type ISetMetric interface {
@@ -62,13 +63,36 @@ type ISetRouterHandler interface {
 	SetRouters([]*conf.Router) error
 }
 
+func getRouters(services map[string][]string) conf.Routers {
+	routers := conf.Routers{}
+
+	if len(services) == 0 {
+		routers.Routers = make([]*conf.Router, 0, 1)
+		routers.Routers = append(routers.Routers, &conf.Router{Action: []string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}, Name: "/*name", Service: "/@name", Engine: "*"})
+		return routers
+	}
+	routers.Routers = make([]*conf.Router, 0, len(services))
+	for name, actions := range services {
+		router := &conf.Router{
+			Action:  actions, //[]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"},
+			Name:    name,
+			Service: name,
+			Engine:  "*",
+		}
+		router.Action = append(router.Action, "OPTIONS")
+		routers.Routers = append(routers.Routers, router)
+	}
+	return routers
+}
 func SetRouters(engine servers.IRegistryEngine, cnf conf.IServerConf, set ISetRouterHandler, ext map[string]interface{}) (enable bool, err error) {
 	var routers conf.Routers
 	if _, err = cnf.GetSubObject("router", &routers); err == conf.ErrNoSetting || len(routers.Routers) == 0 {
-		routers = conf.Routers{}
-		routers.Routers = make([]*conf.Router, 0, 1)
-		routers.Routers = append(routers.Routers, &conf.Router{Action: []string{"GET", "POST", "PUT", "DELETE", "HEAD"}, Name: "/*name", Service: "/@name", Engine: "*"})
+		// routers = conf.Routers{}
+		// routers.Routers = make([]*conf.Router, 0, 1)
+		// routers.Routers = append(routers.Routers, &conf.Router{Action: []string{"GET", "POST", "PUT", "DELETE", "HEAD"}, Name: "/*name", Service: "/@name", Engine: "*"})
+		routers = getRouters(engine.GetServices())
 	}
+
 	if err != conf.ErrNoSetting && err != nil {
 		err = fmt.Errorf("路由:%v", err)
 		return false, err
@@ -92,7 +116,7 @@ func SetRouters(engine servers.IRegistryEngine, cnf conf.IServerConf, set ISetRo
 				router.Setting[k] = v
 			}
 		}
-		router.Handler = middleware.ContextHandler(engine, router.Name, router.Engine, router.Service, router.Setting, ext)
+		router.Handler = middleware.ContextHandler(engine, router.Name, router.Engine, router.Service, router.Setting, types.Copy(ext, "path", router.Service))
 	}
 	err = set.SetRouters(routers.Routers)
 	return len(routers.Routers) > 0 && err == nil, err
@@ -166,26 +190,71 @@ func SetHosts(set ISetHosts, cnf conf.IServerConf) (enable bool, err error) {
 
 //ISetJwtAuth 设置jwt
 type ISetJwtAuth interface {
-	SetJWT(*conf.Auth) error
+	SetJWT(*conf.JWTAuth) error
 }
 
 //SetJWT 设置jwt
 func SetJWT(set ISetJwtAuth, cnf conf.IServerConf) (enable bool, err error) {
 	//设置jwt安全认证参数
 	var auths conf.Authes
-	var jwt *conf.Auth
 	if _, err := cnf.GetSubObject("auth", &auths); err != nil && err != conf.ErrNoSetting {
 		err = fmt.Errorf("jwt配置有误:%v", err)
 		return false, err
 	}
-	if jwt, enable = auths["jwt"]; !enable {
-		jwt = &conf.Auth{Disable: true}
-	} else {
-		if b, err := govalidator.ValidateStruct(jwt); !b {
+	if auths.JWT != nil {
+		if b, err := govalidator.ValidateStruct(auths.JWT); !b {
 			err = fmt.Errorf("jwt配置有误:%v", err)
 			return false, err
 		}
+		err = set.SetJWT(auths.JWT)
+		return err == nil && !auths.JWT.Disable, err
 	}
-	err = set.SetJWT(jwt)
-	return err == nil && !jwt.Disable, err
+	return false, nil
+}
+
+//---------------------------------------------------------------------------
+//-------------------------------fixed-secret---------------------------------------
+//---------------------------------------------------------------------------
+
+//CheckFixedSecret 设置FixedSecret
+func CheckFixedSecret(cnf conf.IServerConf) (enable bool, err error) {
+	//设置fixedSecret安全认证参数
+	var auths conf.Authes
+	if _, err := cnf.GetSubObject("auth", &auths); err != nil && err != conf.ErrNoSetting {
+		err = fmt.Errorf("fixed-secret配置有误:%v", err)
+		return false, err
+	}
+	if auths.FixedScret != nil {
+		if b, err := govalidator.ValidateStruct(auths.FixedScret); !b {
+			err = fmt.Errorf("fixed-secret配置有误:%v", err)
+			return false, err
+		}
+		return !auths.FixedScret.Disable, nil
+	}
+	return false, nil
+}
+
+//---------------------------------------------------------------------------
+//-------------------------------remote-auth---------------------------------------
+//---------------------------------------------------------------------------
+
+//CheckRemoteAuth 检查是否设置remote-auth
+func CheckRemoteAuth(cnf conf.IServerConf) (enable bool, err error) {
+	//设置Remote安全认证参数
+	var auths conf.Authes
+	if _, err := cnf.GetSubObject("auth", &auths); err != nil && err != conf.ErrNoSetting {
+		err = fmt.Errorf("remote-auth配置有误:%v", err)
+		return false, err
+	}
+	count := 0
+	for _, auth := range auths.RemotingServiceAuths {
+		if b, err := govalidator.ValidateStruct(auth); !b {
+			err = fmt.Errorf("remote-auth配置有误:%v", err)
+			return false, err
+		}
+		if !auth.Disable {
+			count++
+		}
+	}
+	return count > 0, nil
 }

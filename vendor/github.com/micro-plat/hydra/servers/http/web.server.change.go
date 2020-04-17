@@ -14,8 +14,14 @@ func (s *WebServer) SetRouters(routers []*conf.Router) (err error) {
 }
 
 //SetJWT Server
-func (s *WebServer) SetJWT(auth *conf.Auth) error {
+func (s *WebServer) SetJWT(auth *conf.JWTAuth) error {
 	s.conf.SetMetadata("jwt", auth)
+	return nil
+}
+
+//SetResponse 设置response配置
+func (s *WebServer) SetResponse(r *conf.Response) error {
+	s.conf.SetMetadata("__response_conf_", r)
 	return nil
 }
 
