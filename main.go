@@ -1,7 +1,9 @@
 package main
 
-import "github.com/micro-plat/hydra/hydra"
-import _ "github.com/go-sql-driver/mysql"
+import (
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/micro-plat/hydra/hydra"
+)
 
 type ddns struct {
 	*hydra.MicroApp
@@ -12,7 +14,7 @@ func main() {
 		hydra.NewApp(
 			hydra.WithPlatName("ddns"),
 			hydra.WithSystemName("ddns"),
-			hydra.WithServerTypes("api"),
+			hydra.WithServerTypes("cron"),
 			hydra.WithClusterName("dns")),
 	}
 

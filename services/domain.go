@@ -12,7 +12,7 @@ type Domain struct {
 	IP     string `form:"ip" json:"ip" valid:"ip,required"`
 }
 
-func checkAndCreate(domain *Domain, r registry.IRegistry) interface{} {
+func checkAndCreate(domain *Domain, r registry.IRegistry) error {
 
 	root := registry.Join("/dns", domain.Domain)
 	path := registry.Join(root, domain.IP)
@@ -36,5 +36,5 @@ func checkAndCreate(domain *Domain, r registry.IRegistry) interface{} {
 		fmt.Sprintf(`{"time":%d}`, time.Now().Unix())); err != nil {
 		return err
 	}
-	return "success"
+	return nil
 }
