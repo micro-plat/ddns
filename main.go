@@ -14,7 +14,7 @@ func main() {
 		hydra.NewApp(
 			hydra.WithPlatName("ddns"),
 			hydra.WithSystemName("ddns"),
-			hydra.WithServerTypes("cron"),
+			hydra.WithServerTypes("api-cron"),
 			hydra.WithClusterName("dns")),
 	}
 

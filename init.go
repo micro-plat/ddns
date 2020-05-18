@@ -22,5 +22,6 @@ func (app *ddns) init() {
 		server.Shutdown()
 		return nil
 	})
-	app.CRON("/cron/ddns", services.NewDdnsHandler)
+	app.Micro("/ddns/request", services.NewDdnsHandler)
+	app.CRON("/github/ip/check", services.NewGithubHandler)
 }
