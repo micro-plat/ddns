@@ -5,11 +5,13 @@ import (
 	"github.com/micro-plat/hydra/context"
 )
 
+// DdnsHandler Handler
 type DdnsHandler struct {
 	container component.IContainer
 }
 
-func NewDdnsHandler(container component.IContainer) (u *DdnsHandler) {
+// NewDdnsHandler 构建DdnsHandler
+func NewDdnsHandler(container component.IContainer) *DdnsHandler {
 	return &DdnsHandler{container: container}
 }
 

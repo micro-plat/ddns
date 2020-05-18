@@ -50,7 +50,10 @@ func getIP(text string, address string) (string, error) {
 
 // GetGithubDomains chromedp请求
 func GetGithubDomains() (domains []*Domain, err error) {
-	ctx, cancel := chromedp.NewContext(context.Background(), chromedp.WithDebugf(log.Printf))
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+		chromedp.WithDebugf(log.Printf))
+
 	defer cancel()
 
 	ctx, cancel = context.WithTimeout(ctx, 50*time.Second)
@@ -58,8 +61,11 @@ func GetGithubDomains() (domains []*Domain, err error) {
 
 	var res string
 	for _, v := range address {
-		err = chromedp.Run(ctx, chromedp.Tasks{chromedp.Navigate(pageurl + v), chromedp.Sleep(5 * time.Second),
-			chromedp.OuterHTML(`body`, &res, chromedp.ByQuery), chromedp.Sleep(5 * time.Second),
+		err = chromedp.Run(ctx, chromedp.Tasks{
+			chromedp.Navigate(pageurl + v),
+			chromedp.Sleep(5 * time.Second),
+			chromedp.OuterHTML(`body`, &res, chromedp.ByQuery),
+			chromedp.Sleep(5 * time.Second),
 		})
 
 		if err != nil {
