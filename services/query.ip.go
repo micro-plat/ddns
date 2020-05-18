@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/micro-plat/lib4go/types"
 )
@@ -57,10 +56,6 @@ func RemoteChromedp() (domains []*Domain, err error) {
 
 	ctx, cancel = context.WithTimeout(ctx, 50*time.Second)
 	defer cancel()
-
-	if err = chromedp.Run(ctx, chromedp.Tasks{emulation.SetDeviceMetricsOverride(1920, 1080, 1.0, false)}); err != nil {
-		return nil, err
-	}
 
 	var res string
 	for _, v := range address {
