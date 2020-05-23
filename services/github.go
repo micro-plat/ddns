@@ -1,41 +1,41 @@
 package services
 
 import (
-	"github.com/micro-plat/hydra/component"
-	"github.com/micro-plat/hydra/context"
+	"github.com/micro-plat/hydra"
+	"github.com/micro-plat/hydra/registry"
 )
 
 // GithubHandler handle
 type GithubHandler struct {
-	container component.IContainer
 }
 
 // NewGithubHandler 构建GithubHandler
-func NewGithubHandler(container component.IContainer) *GithubHandler {
-	return &GithubHandler{container: container}
+func NewGithubHandler() *GithubHandler {
+	return &GithubHandler{}
 }
 
 //Handle 保存动态域名信息
-func (u *GithubHandler) Handle(ctx *context.Context) (r interface{}) {
-	ctx.Log.Info("--------------定时获取github动态域名信息---------------")
+func (u *GithubHandler) Handle(ctx hydra.IContext) (r interface{}) {
+	ctx.Log().Info("--------------定时获取github动态域名信息---------------")
 
-	ctx.Log.Info("1.获取github domains")
+	ctx.Log().Info("1.获取github domains")
 	domians, err := GetGithubDomains()
 	if err != nil {
 		return err
 	}
-	ctx.Log.Infof("2.获取分布式锁,v%+v", domians)
+
+	ctx.Log().Info("2.保存域名")
+	registry, err := registry.NewRegistry(hydra.Application.RegistryAddr, ctx.Log())
+	if err != nil {
+		return err
+	}
+
 	for _, v := range domians {
-		lk := ctx.NewDLock(v.Domain)
-		if err := lk.Lock(); err != nil {
-			return err
-		}
-		defer lk.Unlock()
-		if err := checkAndCreate(v, u.container.GetRegistry()); err != nil {
+		if err := checkAndCreate(v, registry); err != nil {
 			return err
 		}
 	}
 
-	ctx.Log.Info("3. 返回结果")
+	ctx.Log().Info("3. 返回结果")
 	return "success"
 }

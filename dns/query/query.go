@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/micro-plat/hydra/component"
+	"github.com/micro-plat/hydra"
+	"github.com/micro-plat/hydra/registry"
 	"github.com/micro-plat/lib4go/logger"
 )
 
@@ -36,8 +37,12 @@ func Lookup(name string) []net.IP {
 }
 
 //Start 启动查询注册
-func Start(c component.IContainer, log logger.ILogger) error {
-	registry := NewRegistry(c.GetRegistry(), log)
+func Start(log logger.ILogger) error {
+	r, err := registry.NewRegistry(hydra.Application.RegistryAddr, log)
+	if err != nil {
+		return err
+	}
+	registry := NewRegistry(r, log)
 	if err := registry.Start(); err != nil {
 		return err
 	}

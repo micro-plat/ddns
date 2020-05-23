@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/micro-plat/hydra/component"
 	"github.com/micro-plat/lib4go/logger"
 	"github.com/micro-plat/lib4go/types"
 	"github.com/miekg/dns"
@@ -20,8 +19,8 @@ type DNSHandler struct {
 }
 
 //NewHandler 构建DNS处理程序
-func NewHandler(c component.IContainer, log logger.ILogger) (*DNSHandler, error) {
-	local, err := NewLocal(c, log)
+func NewHandler(log logger.ILogger) (*DNSHandler, error) {
+	local, err := NewLocal(log)
 	if err != nil {
 		return nil, err
 	}

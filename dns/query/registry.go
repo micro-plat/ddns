@@ -4,7 +4,6 @@ import (
 	"net"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/micro-plat/hydra/registry"
 	"github.com/micro-plat/hydra/registry/watcher"
@@ -16,8 +15,8 @@ type Registry struct {
 	r       registry.IRegistry
 	root    string
 	domain  map[string][]net.IP
-	watcher *watcher.ChildrenWatcher
-	notify  chan *watcher.ChildrenChangeArgs
+	watcher watcher.IChildWatcher
+	notify  chan *watcher.ChildChangeArgs
 	log     logger.ILogger
 	closeCh chan struct{}
 	lk      sync.Mutex
@@ -31,8 +30,8 @@ func NewRegistry(r registry.IRegistry, log logger.ILogger) *Registry {
 		domain:  make(map[string][]net.IP),
 		log:     log,
 		closeCh: make(chan struct{}),
-		watcher: watcher.NewChildrenWatcher("/dns", 2, time.Second*10, r, log),
 	}
+	registry.watcher, _ = watcher.NewChildWatcherByRegistry(r, []string{"/dns"}, log)
 	return registry
 }
 

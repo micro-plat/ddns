@@ -13,7 +13,6 @@ type Domain struct {
 }
 
 func checkAndCreate(domain *Domain, r registry.IRegistry) error {
-
 	root := registry.Join("/dns", domain.Domain)
 	path := registry.Join(root, domain.IP)
 

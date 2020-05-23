@@ -4,7 +4,6 @@ import (
 	"net"
 
 	"github.com/micro-plat/ddns/dns/query"
-	"github.com/micro-plat/hydra/component"
 	"github.com/micro-plat/lib4go/logger"
 )
 
@@ -19,8 +18,8 @@ type Local struct {
 }
 
 //NewLocal 创建缓存对象
-func NewLocal(c component.IContainer, log logger.ILogger) (*Local, error) {
-	if err := query.Start(c, log); err != nil {
+func NewLocal(log logger.ILogger) (*Local, error) {
+	if err := query.Start(log); err != nil {
 		return nil, err
 	}
 	return &Local{}, nil

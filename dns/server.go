@@ -5,7 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/micro-plat/hydra/component"
+	"github.com/micro-plat/hydra/registry/conf/server"
+	"github.com/micro-plat/hydra/servers"
 	"github.com/micro-plat/lib4go/logger"
 	xnet "github.com/micro-plat/lib4go/net"
 	"github.com/miekg/dns"
@@ -15,17 +16,18 @@ import (
 type Server struct {
 	host     string
 	port     string
+	conf     server.IServerConf
 	servers  []*dns.Server
 	rTimeout time.Duration
 	wTimeout time.Duration
 	log      logger.ILogger
-	c        component.IContainer
 	hander   *DNSHandler
 }
 
-func NewServer(c component.IContainer) *Server {
+//NewServer 构建DNS服务器
+func NewServer(conf server.IServerConf) *Server {
 	return &Server{
-		c:        c,
+		conf:     conf,
 		servers:  make([]*dns.Server, 0, 2),
 		host:     xnet.GetLocalIPAddress(),
 		port:     "53",
@@ -43,7 +45,7 @@ func (s *Server) Addr() string {
 //Start 启动服务器
 func (s *Server) Start() (err error) {
 	s.log.Info("开始启动[DNS]服务...")
-	s.hander, err = NewHandler(s.c, s.log)
+	s.hander, err = NewHandler(s.log)
 	if err != nil {
 		return err
 	}
@@ -81,6 +83,11 @@ func (s *Server) Start() (err error) {
 
 }
 
+//Notify 配置变更后重启
+func (s *Server) Notify(c server.IServerConf) (bool, error) {
+	return false, nil
+}
+
 //Shutdown 关闭服务器
 func (s *Server) Shutdown() {
 	for _, server := range s.servers {
@@ -104,3 +111,12 @@ func (s *Server) serve(ds *dns.Server) error {
 		return fmt.Errorf("DNS服务%s://%s启动失败:%v", ds.Net, ds.Addr, err)
 	}
 }
+
+func init() {
+	fn := func(c server.IServerConf) (servers.IResponsiveServer, error) {
+		return NewServer(c), nil
+	}
+	servers.Register(DDNS, fn)
+}
+
+const DDNS = "ddns"
