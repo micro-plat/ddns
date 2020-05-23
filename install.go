@@ -13,8 +13,4 @@ func init() {
 		hydra.Conf.API(":9090").
 			Header(header.WithCrossDomain())
 	})
-	// app.Conf.API.SetMain(conf.NewAPIServerConf("9090"))
-	// tasks := conf.NewTasks()
-	// tasks.Append("@midnight", "/github/ip/check")
-	// app.Conf.CRON.SetTasks(tasks)
 }
