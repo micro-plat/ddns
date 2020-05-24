@@ -26,7 +26,7 @@ func NewHandler(log logger.ILogger) (*DNSHandler, error) {
 	}
 	resolver, err := NewResolver(log)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("创建域名解析器失败 %w", err)
 	}
 	return &DNSHandler{
 		remote: resolver,

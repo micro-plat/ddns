@@ -2,6 +2,7 @@ package dns
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -40,14 +41,15 @@ func (f *Names) Start() (err error) {
 	}
 	f.watcher, err = fsnotify.NewWatcher()
 	if err != nil {
-		return err
+		return fmt.Errorf("构建文件监控器失败:%w", err)
 	}
+	fmt.Println("添加文件监控：", query.NAME_ROOT)
 	if err := f.watcher.Add(query.NAME_ROOT); err != nil {
-		return err
+		return fmt.Errorf("添加监控文件%s失败 %w", query.NAME_ROOT, err)
 	}
 	err = f.reload()
 	if err != nil {
-		return err
+		return fmt.Errorf("加载配置失败:%w", err)
 	}
 	f.log.Infof("[启用 NAMES,%d条]", f.len())
 	go f.loopWatch()
@@ -96,7 +98,6 @@ func (f *Names) loopWatch() {
 			}
 		}
 	}
-	f.log.Info("exit")
 }
 
 func (f *Names) reload() error {
@@ -125,7 +126,7 @@ func (f *Names) sortByTTL(names []string) []string {
 func (f *Names) load(path string) ([]string, error) {
 	buf, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("无法打开文件%s %w", path, err)
 	}
 	defer buf.Close()
 
@@ -161,13 +162,13 @@ func (f *Names) checkAndCreateConf() error {
 	}
 	fwriter, err := file.CreateFile(query.NAME_FILE)
 	if err != nil {
-		return err
+		return fmt.Errorf("创建文件:%s失败 %w", query.NAME_FILE, err)
 	}
 
 	defer fwriter.Close()
 	_, err = fwriter.Write([]byte(strings.Join(defNames, "\n")))
 	if err != nil {
-		return err
+		return fmt.Errorf("写入文件:%s失败:%s", defNames, err)
 	}
 	return nil
 }

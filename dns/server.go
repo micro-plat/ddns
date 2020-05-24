@@ -47,7 +47,7 @@ func (s *Server) Start() (err error) {
 	s.log.Info("开始启动[DNS]服务...")
 	s.hander, err = NewHandler(s.log)
 	if err != nil {
-		return err
+		return fmt.Errorf("构建DNS处理服务失败:%w", err)
 	}
 
 	tcpHandler := dns.NewServeMux()
@@ -69,7 +69,7 @@ func (s *Server) Start() (err error) {
 		ReadTimeout:  s.rTimeout,
 		WriteTimeout: s.wTimeout}
 
-	errChan := make(chan error, 1)
+	errChan := make(chan error, 2)
 	go func() {
 		if err := s.serve(udpServer); err != nil {
 			errChan <- err
@@ -131,4 +131,5 @@ func init() {
 	servers.Register(DDNS, fn)
 }
 
+//DDNS 动态DNS服务器
 const DDNS = "ddns"
