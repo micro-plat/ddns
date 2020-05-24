@@ -69,17 +69,29 @@ func (s *Server) Start() (err error) {
 		ReadTimeout:  s.rTimeout,
 		WriteTimeout: s.wTimeout}
 
-	if err := s.serve(udpServer); err != nil {
+	errChan := make(chan error, 1)
+	go func() {
+		if err := s.serve(udpServer); err != nil {
+			errChan <- err
+		}
+	}()
+	go func() {
+		if err := s.serve(tcpServer); err != nil {
+			errChan <- err
+		}
+	}()
+
+	select {
+	case <-time.After(time.Millisecond * 500):
+		s.log.Infof("服务启动成功(DNS,udp://%s)", s.Addr())
+		s.log.Infof("服务启动成功(DNS,tcp://%s)", s.Addr())
+		s.servers = append(s.servers, tcpServer)
+		s.servers = append(s.servers, udpServer)
+		return nil
+	case err := <-errChan:
+		s.log.Info("ddns启动失败:", err)
 		return err
 	}
-	s.log.Infof("服务启动成功(DNS,udp://%s)", s.Addr())
-	if err := s.serve(tcpServer); err != nil {
-		return err
-	}
-	s.log.Infof("服务启动成功(DNS,tcp://%s)", s.Addr())
-	s.servers = append(s.servers, tcpServer)
-	s.servers = append(s.servers, udpServer)
-	return nil
 
 }
 
