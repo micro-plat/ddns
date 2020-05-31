@@ -25,7 +25,7 @@ func (u *DdnsHandler) Handle(ctx hydra.IContext) (r interface{}) {
 	}
 
 	ctx.Log().Info("2. 检查并创建解析信息")
-	registry, err := registry.NewRegistry(hydra.Application.RegistryAddr, ctx.Log())
+	registry, err := registry.NewRegistry(hydra.Global.RegistryAddr, ctx.Log())
 	if err != nil {
 		return err
 	}

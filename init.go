@@ -8,5 +8,6 @@ import (
 func init() {
 
 	app.Micro("/ddns/request", services.NewDdnsHandler())
+	app.Micro("/github/ip/check", services.NewGithubHandler())
 	app.CRON("/github/ip/check", services.NewGithubHandler())
 }

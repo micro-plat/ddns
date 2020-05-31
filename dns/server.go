@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/micro-plat/hydra/registry/conf/server"
-	"github.com/micro-plat/hydra/servers"
+	"github.com/micro-plat/hydra/conf/server"
+	"github.com/micro-plat/hydra/hydra/servers"
 	"github.com/micro-plat/lib4go/logger"
 	xnet "github.com/micro-plat/lib4go/net"
 	"github.com/miekg/dns"

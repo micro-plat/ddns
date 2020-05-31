@@ -38,7 +38,7 @@ func Lookup(name string) []net.IP {
 
 //Start 启动查询注册
 func Start(log logger.ILogger) error {
-	r, err := registry.NewRegistry(hydra.Application.RegistryAddr, log)
+	r, err := registry.NewRegistry(hydra.Global.RegistryAddr, log)
 	if err != nil {
 		return err
 	}
