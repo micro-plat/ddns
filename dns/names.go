@@ -14,7 +14,7 @@ import (
 	"github.com/micro-plat/lib4go/logger"
 )
 
-var defNames = []string{"114.114.114.114", "8.8.8.8"}
+var defNames = []string{"127.0.1.1"}
 
 //Names 本地name server读取配置
 type Names struct {
@@ -22,7 +22,7 @@ type Names struct {
 	watcher *fsnotify.Watcher
 	log     logger.ILogger
 	names   []string
-	lk      sync.Mutex
+	lk      sync.RWMutex
 }
 
 //NewNames 创建本地host文件读取对象
@@ -57,13 +57,13 @@ func (f *Names) Start() (err error) {
 
 //Lookup 查询域名解析结果
 func (f *Names) Lookup() []string {
-	f.lk.Lock()
-	defer f.lk.Unlock()
+	f.lk.RLock()
+	defer f.lk.RUnlock()
 	return f.names
 }
 func (f *Names) len() int {
-	f.lk.Lock()
-	defer f.lk.Unlock()
+	f.lk.RLock()
+	defer f.lk.RUnlock()
 	return len(f.names)
 }
 

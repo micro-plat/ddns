@@ -89,7 +89,6 @@ func (s *Server) Start() (err error) {
 		s.servers = append(s.servers, udpServer)
 		return nil
 	case err := <-errChan:
-		s.log.Info("ddns启动失败:", err)
 		return err
 	}
 

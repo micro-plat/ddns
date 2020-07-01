@@ -94,9 +94,9 @@ func (r *Resolver) lookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	var wg sync.WaitGroup
 	lookup := func(nameserver string) {
 		defer wg.Done()
-
+		logger.Debug("exchange.start:", req.Question[0].Name, "by", nameserver)
+		defer logger.Debug("exchange.end:", req.Question[0].Name, "by", nameserver)
 		res, _, err1 := c.Exchange(req, nameserver)
-		logger.Debug("exchange:", nameserver, res, err1)
 		if err1 != nil {
 			err = fmt.Errorf("%v,%v", err, err1)
 			return
@@ -116,7 +116,7 @@ func (r *Resolver) lookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	ticker := time.NewTicker(time.Millisecond * 3000)
 	defer ticker.Stop()
 	names := r.names.Lookup()
-	logger.Debug("lookup:", names)
+	logger.Debug("lookup:", req.Question[0].Name, "from", names)
 	for _, host := range names {
 		wg.Add(1)
 		go lookup(host)

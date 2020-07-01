@@ -10,9 +10,7 @@ import (
 
 var app = hydra.NewApp(
 	hydra.WithPlatName("ddns"),
-	hydra.WithSystemName("ddns"),
-	hydra.WithServerTypes(dns.DDNS, http.API,cron.CRON),
-	hydra.WithClusterName("dns"))
+	hydra.WithServerTypes(dns.DDNS, http.API, cron.CRON))
 
 func main() {
 	app.Start()
