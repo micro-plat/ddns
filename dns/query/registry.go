@@ -78,7 +78,7 @@ func (r *Registry) load(path string, name string) error {
 		r.lk.Lock()
 		delete(r.domain, name)
 		r.lk.Unlock()
-		r.log.Infof("[注册中心:%s,0条]", path)
+		r.log.Infof("[缓存:%s,0条]", path)
 		return nil
 	}
 	ips, _, err := r.r.GetChildren(path)
@@ -95,7 +95,7 @@ func (r *Registry) load(path string, name string) error {
 		r.domain[name] = nips
 	}
 	r.lk.Unlock()
-	r.log.Infof("[注册中心:%s,%d条]", name, len(nips))
+	r.log.Infof("[缓存:%s,%d条]", name, len(nips))
 	return nil
 }
 

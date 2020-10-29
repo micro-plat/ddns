@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/registry"
 )
@@ -21,13 +23,13 @@ func (u *GithubHandler) Handle(ctx hydra.IContext) (r interface{}) {
 	ctx.Log().Info("1.获取github domains")
 	domians, err := GetGithubDomains()
 	if err != nil {
-		return err
+		return fmt.Errorf("获取域名失败:%w", err)
 	}
 
 	ctx.Log().Info("2.保存域名")
 	registry, err := registry.NewRegistry(hydra.G.RegistryAddr, ctx.Log())
 	if err != nil {
-		return err
+		return fmt.Errorf("无法保存域名:%w", err)
 	}
 
 	for _, v := range domians {
