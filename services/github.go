@@ -23,7 +23,7 @@ func (u *GithubHandler) Handle(ctx hydra.IContext) (r interface{}) {
 	ctx.Log().Info("1.获取github domains")
 	domians, err := GetGithubDomains()
 	if err != nil {
-		return fmt.Errorf("获取域名失败:%w", err)
+		return err
 	}
 
 	ctx.Log().Info("2.保存域名")
