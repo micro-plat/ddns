@@ -113,7 +113,7 @@ func (r *Resolver) lookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	}
 
 	//循环所有名称服务器，每个服务器等待200毫秒，未拿到解析结果则发起下一个名称解析
-	ticker := time.NewTicker(time.Millisecond * 3000)
+	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	names := r.names.Lookup()
 	logger.Debug("lookup:", req.Question[0].Name, "from", names)
