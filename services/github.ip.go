@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,7 +15,10 @@ import (
 )
 
 var address = []string{"github.com", "github.global.ssl.fastly.net", "assets-cdn.github.com"}
-var pageurl = "http://www.baidu.com?wd=" //"http://tool.chinaz.com/dns?type=1&host="
+
+var pageurl = "http://tool.chinaz.com/dns?type=1&host="
+
+// var pageurl = "https://www.baidu.com/dns?type=1&host="
 
 // getIP 获取ip
 func getIP(text string, address string) (string, error) {
@@ -54,30 +56,29 @@ func getIP(text string, address string) (string, error) {
 func GetGithubDomains() (domains []*Domain, err error) {
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
-		chromedp.WithDebugf(log.Printf))
-
+		chromedp.WithErrorf(log.Printf),
+	)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 120*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 50*time.Second)
 	defer cancel()
 
 	var res string
 	for _, v := range address {
-		url := pageurl + url.QueryEscape(v) + "&" + fmt.Sprint(time.Now().UnixNano())
-		fmt.Println("request:", url)
+		url := pageurl + v
 		err = chromedp.Run(ctx, chromedp.Tasks{
 			chromedp.Navigate(url),
-			// chromedp.Sleep(30 * time.Second),
-			// chromedp.OuterHTML(`body`, &res, chromedp.ByQuery),
-			// chromedp.Sleep(10 * time.Second),
+			chromedp.Sleep(5 * time.Second),
+			chromedp.OuterHTML(`body`, &res, chromedp.ByQuery),
+			chromedp.Sleep(5 * time.Second),
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("获取%s 失败%w %s", url, err, res)
+			return nil, fmt.Errorf("请求出错%s %w", url, err)
 		}
 		ip, err := getIP(res, v)
 		if err != nil {
-			return nil, fmt.Errorf("从%s中解析IP地址失败%w", res, err)
+			return nil, err
 		}
 		if ip == "" {
 			continue
