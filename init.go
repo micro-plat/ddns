@@ -12,7 +12,7 @@ func init() {
 
 	app.Micro("/ddns", services.NewDdnsHandler())
 	app.Micro("/github/ip/check", services.NewGithubHandler())
-	app.CRON("/github/ip/check", services.NewGithubHandler(), "@every 5m")
+	app.CRON("/github/ip/check", services.NewGithubHandler(), "@every 3h")
 	hydra.OnReady(func() {
 		hydra.Conf.API(":8081", api.WithDNS("www.ddns.com"))
 		hydra.Conf.CRON(cron.WithMasterSlave())
