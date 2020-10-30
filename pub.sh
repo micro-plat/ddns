@@ -7,7 +7,7 @@
 set timeout -1  
 set uname "yanfa"
 set host "192.168.106.190"
-set pwd  "A0l1ao!@##@!\r"
+set pwd  "-A0l1ao!@##@!\r"
 set dt  [exec date "+%Y%m%d%H%M%S"]
 
 
@@ -26,7 +26,7 @@ expect eof
 
 #远程更新---------------
 spawn echo "远程更新..."
-spawn ssh -t  $uname@$host "cd /srv/ddns/bin;sudo ./ddns stop;sudo cp ./ddns ./ddns_${dt} ;sudo rm -rf ./ddns;sudo cp /tmp/ddns ./;sudo ./ddns start;"
+spawn ssh -t  $uname@$host "cd /srv/ddns/bin;sudo ./ddns stop;sudo cp ./ddns ./ddns_${dt} ;sudo rm -rf ./ddns;sudo cp /tmp/ddns ./;sleep 3;sudo ./ddns start;"
 expect {
     "password" {send $pwd;exp_continue}
     "密码" {send $pwd;}
