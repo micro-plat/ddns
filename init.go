@@ -16,6 +16,6 @@ func init() {
 	hydra.OnReady(func() {
 		hydra.Conf.API(":8081", api.WithDNS("www.ddns.com"))
 		hydra.Conf.CRON(cron.WithMasterSlave())
-		hydra.CRON.Add("@now", "/github/ip/check")
+		// hydra.CRON.Add("@now", "/github/ip/check")
 	})
 }

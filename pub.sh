@@ -7,7 +7,7 @@
 set timeout -1 
 
 #远程服务器地址
-set host "192.168.106.189" 
+set host "192.168.106.190" 
 
 #远程服务器用户名
 set uname "yanfa"
