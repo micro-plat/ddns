@@ -3,11 +3,19 @@
 #将程序发布到远程服务器：expect pub.sh
 #安装expect组件请使用命令:sudo apt install expect
 
+#不过期
+set timeout -1 
 
-set timeout -1  
-set host "192.168.106.190" #远程服务器地址
-set uname "yanfa" #远程服务器用户名
-set pwd  "A0l1ao!@##@!\r" #远程服务器密码
+#远程服务器地址
+set host "192.168.106.190" 
+
+#远程服务器用户名
+set uname "yanfa"
+
+#远程服务器密码
+set pwd  "A0l1ao!@##@!\r" 
+
+#设置时间戳
 set dt  [exec date "+%Y%m%d%H%M%S"]
 
 
