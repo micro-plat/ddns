@@ -1,13 +1,13 @@
 #!/usr/bin/expect 
 
-# 自动发布，执行命令：expect pub.sh
+#将程序发布到远程服务器：expect pub.sh
 #安装expect组件请使用命令:sudo apt install expect
 
 
 set timeout -1  
-set uname "yanfa"
-set host "192.168.106.190"
-set pwd  "-A0l1ao!@##@!\r"
+set host "192.168.106.190" #远程服务器地址
+set uname "yanfa" #远程服务器用户名
+set pwd  "A0l1ao!@##@!\r" #远程服务器密码
 set dt  [exec date "+%Y%m%d%H%M%S"]
 
 
@@ -26,6 +26,7 @@ expect eof
 
 #远程更新---------------
 spawn echo "远程更新..."
+
 spawn ssh -t  $uname@$host "cd /srv/ddns/bin;sudo ./ddns stop;sudo cp ./ddns ./ddns_${dt} ;sudo rm -rf ./ddns;sudo cp /tmp/ddns ./;sleep 3;sudo ./ddns start;"
 expect {
     "password" {send $pwd;exp_continue}
@@ -35,4 +36,3 @@ expect eof
 
 #删除本地文件
 spawn rm -rf ./ddns
-exit
