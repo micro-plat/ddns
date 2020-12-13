@@ -38,7 +38,7 @@ func (f *Hosts) Start() (err error) {
 	if err != nil {
 		return err
 	}
-	if err := f.watcher.Add(HOST_ROOT); err != nil {
+	if err := f.watcher.Add(HOST_FILE); err != nil {
 		return err
 	}
 	err = f.loadAll()

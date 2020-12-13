@@ -28,7 +28,7 @@ func (u *DdnsHandler) RequestHandle(ctx hydra.IContext) (r interface{}) {
 	}
 
 	ctx.Log().Info("2. 检查并创建解析信息")
-	registry, err := registry.NewRegistry(hydra.G.RegistryAddr, ctx.Log())
+	registry, err := registry.GetRegistry(hydra.G.RegistryAddr, ctx.Log())
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (u *DdnsHandler) QueryHandle(ctx hydra.IContext) (r interface{}) {
 	}
 
 	ctx.Log().Info("2. 查询解析信息")
-	rgst, err := registry.NewRegistry(hydra.G.RegistryAddr, ctx.Log())
+	rgst, err := registry.GetRegistry(hydra.G.RegistryAddr, ctx.Log())
 	if err != nil {
 		return err
 	}
