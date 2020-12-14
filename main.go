@@ -13,7 +13,7 @@ var app = hydra.NewApp(
 	hydra.WithPlatName("ddns"),
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(dns.DDNS, http.API, cron.CRON),
-	hydra.WithClusterName("dns-1.2"))
+	hydra.WithClusterName("dns"))
 
 func main() {
 	defer app.Close()

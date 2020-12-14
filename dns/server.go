@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/micro-plat/hydra/conf/server"
+	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/hydra/hydra/servers"
 	"github.com/micro-plat/lib4go/logger"
 	xnet "github.com/micro-plat/lib4go/net"
@@ -16,7 +16,7 @@ import (
 type Server struct {
 	host     string
 	port     string
-	conf     server.IServerConf
+	conf     app.IAPPConf
 	servers  []*dns.Server
 	rTimeout time.Duration
 	wTimeout time.Duration
@@ -25,7 +25,7 @@ type Server struct {
 }
 
 //NewServer 构建DNS服务器
-func NewServer(conf server.IServerConf) *Server {
+func NewServer(conf app.IAPPConf) *Server {
 	return &Server{
 		conf:     conf,
 		servers:  make([]*dns.Server, 0, 2),
@@ -95,7 +95,7 @@ func (s *Server) Start() (err error) {
 }
 
 //Notify 配置变更后重启
-func (s *Server) Notify(c server.IServerConf) (bool, error) {
+func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 	return false, nil
 }
 
@@ -124,7 +124,7 @@ func (s *Server) serve(ds *dns.Server) error {
 }
 
 func init() {
-	fn := func(c server.IServerConf) (servers.IResponsiveServer, error) {
+	fn := func(c app.IAPPConf) (servers.IResponsiveServer, error) {
 		return NewServer(c), nil
 	}
 	servers.Register(DDNS, fn)

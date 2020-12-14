@@ -14,11 +14,10 @@ import (
 	"github.com/micro-plat/lib4go/types"
 )
 
-var address = []string{"github.com", "github.global.ssl.fastly.net", "assets-cdn.github.com"}
+var address = []string{"github.com", "developer.github.com", "github.global.ssl.fastly.net", "assets-cdn.github.com"}
 
-var pageurl = "http://tool.chinaz.com/dns?type=1&host="
-
-// var pageurl = "https://www.baidu.com/dns?type=1&host="
+var pageURL = "http://tool.chinaz.com/dns?type=1&host="
+var checkURL = "https://github.com/"
 
 // getIP 获取ip
 func getIP(text string, address string) (string, error) {
@@ -65,7 +64,7 @@ func GetGithubDomains() (domains []*Domain, err error) {
 
 	var res string
 	for _, v := range address {
-		url := pageurl + v
+		url := pageURL + v
 		err = chromedp.Run(ctx, chromedp.Tasks{
 			chromedp.Navigate(url),
 			chromedp.Sleep(5 * time.Second),
@@ -86,4 +85,27 @@ func GetGithubDomains() (domains []*Domain, err error) {
 		domains = append(domains, &Domain{Domain: v, IP: ip})
 	}
 	return
+}
+
+//Check 检查当前IP是否可用
+func Check() error {
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+		chromedp.WithErrorf(log.Printf),
+	)
+	defer cancel()
+
+	ctx, cancel = context.WithTimeout(ctx, 50*time.Second)
+	defer cancel()
+
+	err := chromedp.Run(ctx, chromedp.Tasks{
+		chromedp.Navigate(checkURL),
+		chromedp.Sleep(5 * time.Second),
+	})
+
+	if err != nil {
+		return fmt.Errorf("请求出错%s %w", checkURL, err)
+	}
+	return nil
+
 }
