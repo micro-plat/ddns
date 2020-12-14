@@ -13,7 +13,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/micro-plat/hydra v0.0.0-00010101000000-000000000000
 	github.com/micro-plat/lib4go v1.0.2
-	github.com/miekg/dns v1.1.29
+	github.com/miekg/dns v1.1.34
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/sparrc/go-ping v0.0.0-20190613174326-4e5b6552494c
 )

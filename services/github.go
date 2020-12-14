@@ -39,7 +39,7 @@ func (u *GithubHandler) RequestHandle(ctx hydra.IContext) (r interface{}) {
 	}
 
 	ctx.Log().Info("2.保存域名")
-	registry, err := registry.NewRegistry(hydra.G.RegistryAddr, ctx.Log())
+	registry, err := registry.GetRegistry(hydra.G.RegistryAddr, ctx.Log())
 	if err != nil {
 		return fmt.Errorf("无法保存域名:%w", err)
 	}

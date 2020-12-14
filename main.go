@@ -4,22 +4,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/micro-plat/ddns/dns"
 	"github.com/micro-plat/hydra"
-	"github.com/micro-plat/hydra/global"
-	"github.com/micro-plat/hydra/hydra/servers/cron"
-	"github.com/micro-plat/hydra/hydra/servers/http"
+	"github.com/micro-plat/hydra/global/compatible"
 )
 
-var app = hydra.NewApp(
-	hydra.WithPlatName("ddns"),
-	hydra.WithUsage("DNS服务"),
-	hydra.WithServerTypes(dns.DDNS, http.API, cron.CRON),
-	hydra.WithClusterName("dns"))
-
 func main() {
-	defer app.Close()
-	if err := global.CheckPrivileges(); err != nil {
+	if err := compatible.CheckPrivileges(); err != nil {
 		hydra.G.Log().Error(err)
 		return
 	}
-	app.Start()
+	dns.App.Start()
 }

@@ -43,8 +43,8 @@ func (f *Names) Start() (err error) {
 	if err != nil {
 		return fmt.Errorf("构建文件监控器失败:%w", err)
 	}
-	if err := f.watcher.Add(query.NAME_ROOT); err != nil {
-		return fmt.Errorf("添加监控文件%s失败 %w", query.NAME_ROOT, err)
+	if err := f.watcher.Add(query.NAME_FILE); err != nil {
+		return fmt.Errorf("添加监控文件%s失败 %w", query.NAME_FILE, err)
 	}
 	err = f.reload()
 	if err != nil {

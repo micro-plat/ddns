@@ -47,6 +47,7 @@ func (s *Server) Start() (err error) {
 	s.log.Info("开始启动[DNS]服务...")
 	s.hander, err = NewHandler(s.log)
 	if err != nil {
+		App.Close()
 		return fmt.Errorf("构建DNS处理服务失败:%w", err)
 	}
 
@@ -89,6 +90,9 @@ func (s *Server) Start() (err error) {
 		s.servers = append(s.servers, udpServer)
 		return nil
 	case err := <-errChan:
+		if err != nil {
+			App.Close()
+		}
 		return err
 	}
 
