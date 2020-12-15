@@ -1,4 +1,4 @@
-package query
+package domains
 
 import (
 	"net"
@@ -19,7 +19,7 @@ type Registry struct {
 	notify  chan *watcher.ChildChangeArgs
 	log     logger.ILogger
 	closeCh chan struct{}
-	lk      sync.Mutex
+	lk      sync.RWMutex
 }
 
 //NewRegistry 创建注册中心
@@ -60,8 +60,8 @@ func (r *Registry) loopWatch() {
 
 //Lookup 查询域名解析结果
 func (r *Registry) Lookup(name string) []net.IP {
-	r.lk.Lock()
-	defer r.lk.Unlock()
+	r.lk.RLock()
+	defer r.lk.RUnlock()
 	return r.domain[name]
 }
 
@@ -109,8 +109,8 @@ func getIPs(lst []string) []net.IP {
 	return ips
 }
 func (r *Registry) len() int {
-	r.lk.Lock()
-	defer r.lk.Unlock()
+	r.lk.RLock()
+	defer r.lk.RUnlock()
 	count := 0
 	for _, domain := range r.domain {
 		count += len(domain)

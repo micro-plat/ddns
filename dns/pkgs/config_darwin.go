@@ -1,4 +1,4 @@
-package query
+package pkgs
 
 const (
 	HOST_FILE = "/etc/host*"

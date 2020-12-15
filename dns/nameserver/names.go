@@ -1,4 +1,4 @@
-package dns
+package nameserver
 
 import (
 	"bufio"
@@ -7,9 +7,10 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/micro-plat/ddns/dns/query"
+	"github.com/micro-plat/ddns/dns/pkgs"
 	"github.com/micro-plat/lib4go/file"
 	"github.com/micro-plat/lib4go/logger"
 )
@@ -18,18 +19,20 @@ var defNames = []string{"127.0.1.1"}
 
 //Names 本地name server读取配置
 type Names struct {
-	closeCh chan struct{}
-	watcher *fsnotify.Watcher
-	log     logger.ILogger
-	names   []string
-	lk      sync.RWMutex
+	closeCh  chan struct{}
+	syncChan chan string
+	watcher  *fsnotify.Watcher
+	log      logger.ILogger
+	names    []string
+	lk       sync.RWMutex
 }
 
 //NewNames 创建本地host文件读取对象
 func NewNames(log logger.ILogger) *Names {
 	names := &Names{
-		closeCh: make(chan struct{}),
-		log:     log,
+		closeCh:  make(chan struct{}),
+		syncChan: make(chan string, 100),
+		log:      log,
 	}
 	return names
 }
@@ -43,8 +46,8 @@ func (f *Names) Start() (err error) {
 	if err != nil {
 		return fmt.Errorf("构建文件监控器失败:%w", err)
 	}
-	if err := f.watcher.Add(query.NAME_FILE); err != nil {
-		return fmt.Errorf("添加监控文件%s失败 %w", query.NAME_FILE, err)
+	if err := f.watcher.Add(pkgs.NAME_FILE); err != nil {
+		return fmt.Errorf("添加监控文件%s失败 %w", pkgs.NAME_FILE, err)
 	}
 	err = f.reload()
 	if err != nil {
@@ -77,30 +80,62 @@ func (f *Names) Close() error {
 }
 
 func (f *Names) loopWatch() {
+	go f.watchChange()
+	go f.syncFileChange()
+
+}
+
+func (f *Names) watchChange() {
+
 	for {
 		select {
 		case <-f.closeCh:
 			return
 		case event := <-f.watcher.Events:
-			if event.Name != query.NAME_FILE {
-				continue
-			}
+			fmt.Println("xff", event.Name, event.Op)
 			switch event.Op {
-			case fsnotify.Write:
-				f.log.Infof("文件%s发生变更", event.Name)
-				if err := f.reload(); err != nil {
-					f.log.Error(err)
-				}
-				f.log.Infof("[启用 NAMES,%d]", f.len())
+			case fsnotify.Write, fsnotify.Remove:
+				f.syncChan <- event.Name
 			default:
-
 			}
 		}
 	}
 }
 
+func (f *Names) syncFileChange() {
+	period := time.Second * 5
+	ticker := time.NewTicker(period)
+	for {
+		select {
+		case <-ticker.C:
+			ticker.Stop()
+			files := pkgs.GetSyncData(f.syncChan)
+			if len(files) > 0 {
+				files = pkgs.RemoveRepeat(files)
+			}
+
+			for i := range files {
+				info, err := os.Stat(files[i])
+				if err != nil {
+					if os.IsNotExist(err) {
+						f.log.Infof("文件%s已删除", files[i])
+					}
+					continue
+				}
+				if info.IsDir() {
+					continue
+				}
+
+				f.log.Infof("文件%s发生变更", files[i])
+				f.reload()
+			}
+			ticker.Reset(period)
+		}
+	}
+}
+
 func (f *Names) reload() error {
-	names, err := f.load(query.NAME_FILE)
+	names, err := f.load(pkgs.NAME_FILE)
 	if err != nil {
 		return err
 	}
@@ -134,7 +169,7 @@ func (f *Names) load(path string) ([]string, error) {
 	scanner := bufio.NewScanner(buf)
 	for scanner.Scan() {
 
-		line := strings.Replace(strings.TrimSpace(scanner.Text()), "\t", " ", -1)
+		line := pkgs.PrepareLine(scanner.Text())
 		if strings.HasPrefix(line, "#") || line == "" {
 			continue
 		}
@@ -152,16 +187,16 @@ func (f *Names) load(path string) ([]string, error) {
 	return names, nil
 }
 func (f *Names) checkAndCreateConf() error {
-	_, err := os.Stat(query.NAME_FILE)
+	_, err := os.Stat(pkgs.NAME_FILE)
 	if err == nil {
 		return nil
 	}
 	if !os.IsNotExist(err) {
 		return err
 	}
-	fwriter, err := file.CreateFile(query.NAME_FILE)
+	fwriter, err := file.CreateFile(pkgs.NAME_FILE)
 	if err != nil {
-		return fmt.Errorf("创建文件:%s失败 %w", query.NAME_FILE, err)
+		return fmt.Errorf("创建文件:%s失败 %w", pkgs.NAME_FILE, err)
 	}
 
 	defer fwriter.Close()

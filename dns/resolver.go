@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/micro-plat/ddns/dns/nameserver"
 	"github.com/micro-plat/lib4go/logger"
 	"github.com/miekg/dns"
 	"github.com/patrickmn/go-cache"
@@ -16,12 +17,12 @@ type IResolver interface {
 
 type Resolver struct {
 	cache *cache.Cache
-	names *Names
+	names *nameserver.Names
 	log   logger.ILogger
 }
 
 func NewResolver(log logger.ILogger) (*Resolver, error) {
-	name := NewNames(log)
+	name := nameserver.NewNames(log)
 	if err := name.Start(); err != nil {
 		return nil, err
 	}
@@ -67,9 +68,10 @@ func (r *Resolver) lookupFromCache(req *dns.Msg) (message *dns.Msg, f bool) {
 	if !ok {
 		return nil, false
 	}
-	message = msg.(*dns.Msg)
-	message.Id = req.Id
-	return message, true
+	cur := dns.Msg{}
+	cur = *(msg.(*dns.Msg))
+	cur.Id = req.Id
+	return &cur, true
 }
 
 //save2Cache 保存到缓存
