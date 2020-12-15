@@ -1,4 +1,4 @@
-package domains
+package dns
 
 import (
 	"fmt"
@@ -35,25 +35,35 @@ func Lookup(name string) []net.IP {
 	}
 	return nil
 }
+ 
 
-//Start 启动查询注册
-func Start(log logger.ILogger) error {
-	r, err := registry.GetRegistry(hydra.G.RegistryAddr, log)
-	if err != nil {
-		return err
-	}
-	registry := NewRegistry(r, log)
-	if err := registry.Start(); err != nil {
-		return err
-	}
-	Register("register", registry)
-	hosts := NewHosts(log)
-	if err := hosts.Start(); err != nil {
-		return err
-	}
-	Register("hosts", hosts)
-	return nil
-}
+func Start(log logger.ILogger) error { 
+ 
+	if _, ok := localQueries["register"]; !ok { 
+	  r, err := registry.GetRegistry(hydra.G.RegistryAddr, log) 
+	  if err != nil { 
+		return err 
+	  } 
+	  registry := NewRegistry(r, log) 
+	  if err := registry.Start(); err != nil { 
+		return err 
+	  } 
+	  Register("register", registry) 
+	} 
+	 
+   
+	if _, ok := localQueries["hosts"]; !ok { 
+	  hosts := NewHosts(log) 
+	  if err := hosts.Start(); err != nil { 
+		return err 
+	  } 
+	  Register("hosts", hosts) 
+	} 
+ 	return nil 
+  } 
+
+
+
 
 //Close 关闭服务
 func Close() error {
@@ -62,5 +72,8 @@ func Close() error {
 			return err
 		}
 	}
+	localQueries = make(map[string]IQuery)
+	queries = []IQuery{}
+
 	return nil
 }

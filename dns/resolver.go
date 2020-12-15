@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/micro-plat/ddns/dns/nameserver"
 	"github.com/micro-plat/lib4go/logger"
 	"github.com/miekg/dns"
 	"github.com/patrickmn/go-cache"
@@ -17,12 +16,12 @@ type IResolver interface {
 
 type Resolver struct {
 	cache *cache.Cache
-	names *nameserver.Names
+	names *Names
 	log   logger.ILogger
 }
 
 func NewResolver(log logger.ILogger) (*Resolver, error) {
-	name := nameserver.NewNames(log)
+	name := NewNames(log)
 	if err := name.Start(); err != nil {
 		return nil, err
 	}
@@ -50,6 +49,7 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 
 	//保存缓存
 	if len(rmsg.Answer) > 0 {
+		r.save2Cache(req.Question[0].Name, rmsg)
 		return rmsg, false, nil
 	}
 	//再次从缓存中拉取，解决并发请求时部分请求未能从名称服务器中获取到结果的问题
@@ -58,7 +58,6 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 		return cmsg, true, nil
 	}
 	return rmsg, true, nil
-
 }
 
 //lookupFromCache 从缓存中获和取解析信息

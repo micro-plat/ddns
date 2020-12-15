@@ -3,7 +3,6 @@ package dns
 import (
 	"net"
 
-	"github.com/micro-plat/ddns/dns/domains"
 	"github.com/micro-plat/lib4go/logger"
 )
 
@@ -19,7 +18,7 @@ type Local struct {
 
 //NewLocal 创建缓存对象
 func NewLocal(log logger.ILogger) (*Local, error) {
-	if err := domains.Start(log); err != nil {
+	if err := Start(log); err != nil {
 		return nil, err
 	}
 	return &Local{}, nil
@@ -27,11 +26,11 @@ func NewLocal(log logger.ILogger) (*Local, error) {
 
 //Lookup 查询域名解析
 func (c *Local) Lookup(name string) []net.IP {
-	ips := domains.Lookup(name)
+	ips := Lookup(name)
 	return ips
 }
 
 //Close 关闭缓存服务
 func (c *Local) Close() error {
-	return domains.Close()
+	return Close()
 }

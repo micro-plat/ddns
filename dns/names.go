@@ -1,4 +1,4 @@
-package nameserver
+package dns
 
 import (
 	"bufio"
@@ -10,8 +10,12 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/micro-plat/ddns/dns/conf"
 	"github.com/micro-plat/ddns/dns/pkgs"
+	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/lib4go/file"
+	"github.com/micro-plat/lib4go/types"
+
 	"github.com/micro-plat/lib4go/logger"
 )
 
@@ -135,11 +139,19 @@ func (f *Names) syncFileChange() {
 }
 
 func (f *Names) reload() error {
-	names, err := f.load(pkgs.NAME_FILE)
+
+	names := types.XMap{}
+	fnames, err := f.load(pkgs.NAME_FILE)
 	if err != nil {
 		return err
 	}
-	nNames := f.sortByTTL(names)
+	names.Merge(fnames)
+	rnames, err := f.loadRgt()
+	if err != nil {
+		return err
+	}
+	names.Merge(rnames)
+	nNames := f.sortByTTL(names.Keys())
 	for i, nm := range nNames {
 		nNames[i] = net.JoinHostPort(nm, "53")
 	}
@@ -147,6 +159,7 @@ func (f *Names) reload() error {
 	defer f.lk.Unlock()
 	f.names = nNames
 	return nil
+
 }
 func (f *Names) sortByTTL(names []string) []string {
 	sorted, err := getSortedServer(names...)
@@ -157,15 +170,15 @@ func (f *Names) sortByTTL(names []string) []string {
 }
 
 //load 加载配置文件，并读取指定的文件内容
-func (f *Names) load(path string) ([]string, error) {
+func (f *Names) load(path string) (types.XMap, error) {
 	buf, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("无法打开文件%s %w", path, err)
 	}
 	defer buf.Close()
 
-	ips := make(map[string]string)
-	names := make([]string, 0, 1)
+	names := types.XMap{}
+
 	scanner := bufio.NewScanner(buf)
 	for scanner.Scan() {
 
@@ -178,14 +191,38 @@ func (f *Names) load(path string) ([]string, error) {
 		if ip == nil {
 			continue //ip格式错误
 		}
-		if _, ok := ips[line]; !ok {
-			ips[line] = line
-			names = append(names, line)
+		if _, ok := names[line]; !ok {
+			names[line] = line
 		}
-
 	}
 	return names, nil
 }
+
+//loadRgt 加载注册中心配置dbs列表信息
+func (f *Names) loadRgt() (types.XMap, error) {
+	ddnsConf, err := app.Cache.GetAPPConf(DDNS)
+	if err != nil {
+		return nil, fmt.Errorf("加载注册中心dns配置信息失败:%w", err)
+	}
+
+	var dnslist *conf.Dnss
+	_, err = ddnsConf.GetServerConf().GetSubObject(conf.TypeNodeName, dnslist)
+	if err != nil {
+		return nil, fmt.Errorf("获取[%s]注册中心dns配置信息失败:%w", conf.TypeNodeName, err)
+	}
+	names := types.XMap{}
+	for _, str := range dnslist.Dnss {
+		ip := net.ParseIP(str)
+		if ip == nil {
+			continue //ip格式错误
+		}
+		if _, ok := names[str]; !ok {
+			names[str] = str
+		}
+	}
+	return names, nil
+}
+
 func (f *Names) checkAndCreateConf() error {
 	_, err := os.Stat(pkgs.NAME_FILE)
 	if err == nil {
