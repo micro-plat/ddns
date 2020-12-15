@@ -1,6 +1,6 @@
 package query
 
 const (
-	HOST_FILE = "/etc/host*"
+	HOST_FILE = "/etc/hosts"
 	NAME_FILE = "/etc/names.conf"
 )

@@ -25,7 +25,6 @@ type Hosts struct {
 func NewHosts(log logger.ILogger) *Hosts {
 
 	hosts := &Hosts{
-
 		closeCh: make(chan struct{}),
 		log:     log,
 	}
