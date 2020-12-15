@@ -38,20 +38,26 @@ func Lookup(name string) []net.IP {
 
 //Start 启动查询注册
 func Start(log logger.ILogger) error {
-	r, err := registry.GetRegistry(hydra.G.RegistryAddr, log)
-	if err != nil {
-		return err
+
+	if _, ok := localQueries["register"]; !ok {
+		r, err := registry.GetRegistry(hydra.G.RegistryAddr, log)
+		if err != nil {
+			return err
+		}
+		registry := NewRegistry(r, log)
+		if err := registry.Start(); err != nil {
+			return err
+		}
+		Register("register", registry)
 	}
-	registry := NewRegistry(r, log)
-	if err := registry.Start(); err != nil {
-		return err
+
+	if _, ok := localQueries["hosts"]; !ok {
+		hosts := NewHosts(log)
+		if err := hosts.Start(); err != nil {
+			return err
+		}
+		Register("hosts", hosts)
 	}
-	Register("register", registry)
-	hosts := NewHosts(log)
-	if err := hosts.Start(); err != nil {
-		return err
-	}
-	Register("hosts", hosts)
 	return nil
 }
 
@@ -62,5 +68,7 @@ func Close() error {
 			return err
 		}
 	}
+	localQueries = make(map[string]IQuery)
+	queries = []IQuery{}
 	return nil
 }
