@@ -30,6 +30,7 @@ type Server struct {
 //NewServer 构建DNS服务器
 func NewServer(cnf app.IAPPConf) (*Server, error) {
 	h := &Server{
+		servers:  make([]*dns.Server, 2),
 		conf:     cnf,
 		log:      logger.New(cnf.GetServerConf().GetServerName()),
 		pub:      pub.New(cnf.GetServerConf()),
@@ -47,20 +48,32 @@ func NewServer(cnf app.IAPPConf) (*Server, error) {
 //Start 启动服务器
 func (s *Server) Start() (err error) {
 	s.log.Info("开始启动[DNS]服务...")
+
+	if !s.conf.GetServerConf().IsStarted() {
+		s.log.Warnf("%s被禁用，未启动", s.conf.GetServerConf().GetServerType())
+		return
+	}
+
 	if len(s.servers) == 0 {
 		s.log.Warnf("开启[DNS]服务器失败，没有需要启动的服务器")
 		return
 	}
+
 	errChan := make(chan error, 2)
 	for _, server := range s.servers {
-		go func() {
-			if err := s.serve(server); err != nil {
+		go func(serv *dns.Server) {
+			if err := s.serve(serv); err != nil {
 				errChan <- err
 			}
-		}()
+		}(server)
 	}
 	select {
 	case <-time.After(time.Millisecond * 500):
+		if err = s.publish(); err != nil {
+			err = fmt.Errorf("%s服务发布失败 %w", s.conf.GetServerConf().GetServerType(), err)
+			s.Shutdown()
+			return err
+		}
 		s.log.Infof("服务启动成功(DNS,udp://%s)", s.address)
 		s.log.Infof("服务启动成功(DNS,tcp://%s)", s.address)
 		return nil
@@ -90,7 +103,7 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 		s.conf = c
 		app.Cache.Save(c)
 		if !c.GetServerConf().IsStarted() {
-			s.log.Info("dns服务被禁用，不用重启")
+			s.log.Warn("dns服务被禁用，不用重启")
 			return true, nil
 		}
 
@@ -113,7 +126,17 @@ func (s *Server) Shutdown() {
 	if s.hander != nil {
 		s.hander.Close()
 	}
+	s.pub.Clear()
 }
+
+//publish 将当前服务器的节点信息发布到注册中心
+func (w *Server) publish() (err error) {
+	if err := w.pub.Publish(w.address, "tcp-udp://"+w.address, w.conf.GetServerConf().GetServerID()); err != nil {
+		return err
+	}
+	return
+}
+
 func (s *Server) serve(ds *dns.Server) error {
 	errChan := make(chan error, 1)
 	go func(ch chan error) {
