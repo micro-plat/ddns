@@ -25,3 +25,10 @@ func (s RTTS) Less(i, j int) bool {
 	right := s[j].avgRTT
 	return left < right
 }
+func (s RTTS) ToList() []string {
+	list := make([]string, 0, len(s))
+	for _, v := range s {
+		list = append(list, v.name)
+	}
+	return list
+}

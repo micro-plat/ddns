@@ -17,7 +17,7 @@ type Names struct {
 func New() (*Names, error) {
 	l := &Names{
 		r:      NewResolveConf(),
-		sorter: &Sorter{},
+		sorter: newSorter(),
 	}
 	if err := l.r.Start(); err != nil {
 		return nil, err
@@ -50,5 +50,8 @@ func (l *Names) UpdateRTT(name string, t time.Duration) {
 func (l *Names) Close() {
 	if l.r != nil {
 		l.r.Close()
+	}
+	if l.sorter != nil {
+		l.sorter.Close()
 	}
 }
