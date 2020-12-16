@@ -1,6 +1,8 @@
 package pkgs
 
-import "strings"
+import (
+ 	"strings"
+ )
 
 func GetSyncData(syncChan chan string) (files []string) {
 	for {
@@ -13,7 +15,7 @@ func GetSyncData(syncChan chan string) (files []string) {
 	}
 }
 
-func RemoveRepeat(arr []string) (newArr []string) {
+func Distinct(arr []string) (newArr []string) {
 	newArr = make([]string, 0)
 	for i := 0; i < len(arr); i++ {
 		repeat := false

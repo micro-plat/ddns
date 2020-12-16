@@ -9,6 +9,8 @@ import (
 var (
 	HOST_FILE string
 	NAME_FILE string
+
+	registrykey=`SYSTEM\CurrentControlSet\services\Tcpip\Parameters\Interfaces`
 )
 
 func init() {
