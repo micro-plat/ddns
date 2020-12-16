@@ -66,7 +66,7 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 			case response <- re:
 			default:
 			}
-		case <-ticker.C: //1秒没返回则同步查询
+		case <-ticker.C:
 			continue
 		}
 	}
