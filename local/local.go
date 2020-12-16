@@ -38,7 +38,6 @@ func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 	if msg, ok := l.c.Lookup(req); ok {
 		return msg, ok
 	}
-
 	ips, ok := l.r.Lookup(req)
 	if !ok {
 		ips, ok = l.h.Lookup(req)

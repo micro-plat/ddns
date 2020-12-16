@@ -47,7 +47,6 @@ func (f *Hosts) Start() (err error) {
 	if err != nil {
 		return err
 	}
-	f.log.Infof("[启用 HOSTS,%d条]", f.len())
 	go f.loopWatch()
 	return nil
 }
@@ -58,19 +57,10 @@ func (f *Hosts) Lookup(req *dns.Msg) ([]net.IP, bool) {
 	defer f.lk.RUnlock()
 	for _, domain := range f.domain {
 		if ips, ok := domain[req.Question[0].Name]; ok {
-			return ips, true
+			return ips, len(ips) > 0
 		}
 	}
 	return nil, false
-}
-func (f *Hosts) len() int {
-	f.lk.RLock()
-	defer f.lk.RUnlock()
-	count := 0
-	for _, domain := range f.domain {
-		count += len(domain)
-	}
-	return count
 }
 
 //Close 关闭服务
