@@ -9,6 +9,7 @@ import (
 var (
 	HOST_FILE string
 	NAME_FILE string
+
 )
 
 func init() {
