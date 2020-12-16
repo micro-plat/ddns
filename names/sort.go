@@ -63,7 +63,7 @@ func (s *Sorter) Sort(names ...string) []string {
 
 //UpdateRTT 更新请求时长
 func (s *Sorter) UpdateRTT(name string, t time.Duration) {
-	ok, rtt := s.rtts.SetIfAbsent(name, func(...interface{}) (interface{}, error) {
+	ok, rtt, _ := s.rtts.SetIfAbsentCb(name, func(...interface{}) (interface{}, error) {
 		return &NameRTT{name: name, maxRequest: 1, avgRTT: int64(t)}, nil
 	})
 	nrtt := rtt.(*NameRTT)
