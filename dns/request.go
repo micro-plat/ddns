@@ -43,11 +43,14 @@ func NewRequest(proto string, w dns.ResponseWriter, req *dns.Msg) (r *Request) {
 
 //GetName 获取任务名称
 func (m *Request) GetName() string {
-	return "/"
+	return m.GetService()
 }
 
 //GetService 服务名
 func (m *Request) GetService() string {
+	if len(m.req.Question) > 0 {
+		return "/" + m.req.Question[0].Name
+	}
 	return "/"
 }
 
