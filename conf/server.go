@@ -32,14 +32,13 @@ type Server struct {
 	RTimeout int    `json:"rTimeout,omitempty" toml:"rTimeout,omitzero"` //单位秒
 	WTimeout int    `json:"wTimeout,omitempty" toml:"wTimeout,omitzero"` //单位秒
 	UDPSize  int    `json:"udpSize,omitempty" toml:"udpSize,omitzero"`   //udp协议传输mesgges大小 单位字节
+	Trace    bool   `json:"trace,omitempty" toml:"trace,omitempty"`
 }
 
 //New 构建websocket server配置信息
 func New(opts ...Option) *Server {
 	a := &Server{
 		Status:   StartStatus,
-		Host:     net.GetLocalIPAddress(),
-		Port:     "53",
 		RTimeout: 5,
 		WTimeout: 5,
 		UDPSize:  65535,
