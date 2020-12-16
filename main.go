@@ -3,7 +3,6 @@ package main
 import (
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/micro-plat/ddns/dns"
 	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/global/compatible"
