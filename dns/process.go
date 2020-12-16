@@ -67,7 +67,6 @@ func (p *Processor) execute() middleware.Handler {
 		if cache {
 			ctx.Response().AddSpecial("C")
 		}
-
 		//处理响应结果
 		msg.SetReply(req)
 		writer.WriteMsg(msg)

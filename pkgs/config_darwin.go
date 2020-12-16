@@ -1,6 +1,8 @@
 package pkgs
 
+
+
 const (
-	HOST_FILE = "/etc/host*"
-	NAME_FILE = "/etc/names.conf"
+	HOST_FILE = "/etc/hosts_*"
+	NAME_FILE = "/etc/resolv.conf"
 )
