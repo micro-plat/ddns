@@ -62,3 +62,9 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 	}
 	return nil, true, fmt.Errorf("未获取到解析结果")
 }
+
+//Close 关闭上游服务
+func (r *Resolver) Close() {
+	r.local.Close()
+	r.remote.Close()
+}

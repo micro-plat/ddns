@@ -143,6 +143,7 @@ func (s *Server) Shutdown() {
 	for _, server := range s.servers {
 		server.Shutdown()
 	}
+	s.p.Close()
 	s.pub.Clear()
 }
 

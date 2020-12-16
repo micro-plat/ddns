@@ -106,3 +106,6 @@ LOOP:
 		}
 	}
 }
+func (r *Remote) Close() {
+	r.names.Close()
+}

@@ -74,3 +74,8 @@ func (p *Processor) execute() middleware.Handler {
 
 	}
 }
+
+//Close 关闭上游服务
+func (p *Processor) Close() {
+	p.resolver.Close()
+}

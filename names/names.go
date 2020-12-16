@@ -30,3 +30,8 @@ func (l *Names) Lookup() []string {
 	return defNames
 
 }
+
+//Close 关闭服务
+func (l *Names) Close() {
+	l.r.Close()
+}

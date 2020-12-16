@@ -83,3 +83,8 @@ func pack(ips []net.IP, req *dns.Msg) *dns.Msg {
 func (l *Local) Save2Cache(msg *dns.Msg) {
 	l.c.Set(msg)
 }
+
+//Close 关闭服务
+func (l *Local) Close() {
+	l.r.Close()
+}
