@@ -13,7 +13,11 @@ import (
 var defRemote = New()
 
 func Lookup(req *dns.Msg) (message *dns.Msg, b bool) {
-	return nil, false
+	message, err := defRemote.Lookup(req)
+	if err != nil {
+		return nil, false
+	}
+	return message, true
 }
 
 type Remote struct {
@@ -22,9 +26,14 @@ type Remote struct {
 
 //New 构建远程解析器
 func New() *Remote {
-	return &Remote{
+	rmt := &Remote{
 		names: names.NewNames(),
 	}
+	err := rmt.names.Start()
+	if err != nil {
+		panic(fmt.Errorf("remote.New: %w", err))
+	}
+	return rmt
 }
 
 //Lookup 从远程服务器查询解析信息

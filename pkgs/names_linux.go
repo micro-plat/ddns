@@ -2,61 +2,63 @@ package pkgs
 
 import (
 	"bufio"
- 	"net"
+	"net"
 	"os"
+	"sort"
 	"strings"
-
- )
-
+)
 
 func WatchNameFile(closeCh chan struct{}, nameCh chan []string) {
 	fw := NewFileWatcher(5)
 	fw.Change = func(string) error {
-		names ,err:= GetNameServers()
-		if err!=nil{
-			return  err
+		names, err := GetNameServers()
+		if err != nil {
+			return err
 		}
 		nameCh <- names
-		return nil 
+		return nil
 	}
 	fw.Deleted = func(string) error {
-		names ,err:= GetNameServers()
+		names, err := GetNameServers()
 		if err != nil {
-			return  err
+			return err
 		}
 		nameCh <- names
-		return nil 
+		return nil
 	}
 	fw.Add(NAME_FILE)
 	select {
 	case <-closeCh:
 		return
 	}
- }
+}
 
 func GetNameServers() (nameserver []string, err error) {
 	buf, err := os.Open(NAME_FILE)
 	if err != nil {
-		return []string{},nil 
+		return []string{}, nil
 	}
 	defer buf.Close()
- 
+
 	scanner := bufio.NewScanner(buf)
 	for scanner.Scan() {
 		line := PrepareLine(scanner.Text())
 		if strings.HasPrefix(line, "#") || line == "" {
 			continue
 		}
-
+		//fmt.Println("line:", line)
+		line = strings.Replace(line, "nameserver", "", -1)
+		line = strings.TrimSpace(line)
 		ip := net.ParseIP(line)
 		if ip == nil {
 			continue //ip格式错误
 		}
-		nameserver  = append(nameserver,line)
+		nameserver = append(nameserver, line)
 
 	}
+	nameserver = Distinct(nameserver)
+	sort.Strings(nameserver)
+	//fmt.Println("linux.nameserver:", nameserver)
 	return nameserver, nil
 
 }
-
- 

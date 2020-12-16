@@ -77,5 +77,7 @@ func GetNameServers() (nameserver []string, err error) {
 	}
 	nameserver = Distinct(nameserver)
 	sort.Strings(nameserver)
+	fmt.Println("windows.nameserver:", nameserver)
+
 	return
 }

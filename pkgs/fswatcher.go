@@ -1,8 +1,7 @@
 package pkgs
 
 import (
-	"fmt"
-	"os"
+ 	"os"
 	"time"
 
 	"github.com/micro-plat/lib4go/types"
@@ -23,9 +22,10 @@ type FileWatcher struct {
 
 func NewFileWatcher(tickerSec int) *FileWatcher {
 	fw := &FileWatcher{
-		closeCh:  make(chan struct{}),
-		syncChan: make(chan string, 100),
-		files:    types.XMap{},
+		tickerSec: tickerSec,
+		closeCh:   make(chan struct{}),
+		syncChan:  make(chan string, 100),
+		files:     types.XMap{},
 	}
 	fw.watcher, _ = fsnotify.NewWatcher()
 	go fw.loopwatch()
@@ -66,6 +66,8 @@ func (fw *FileWatcher) loadFileChange() {
 	ticker := time.NewTicker(period)
 	for {
 		select {
+		case <-fw.closeCh:
+			return
 		case <-ticker.C:
 			ticker.Stop()
 			files := GetSyncData(fw.syncChan)
@@ -101,7 +103,6 @@ func (fw *FileWatcher) watchFile() {
 		case <-fw.closeCh:
 			return
 		case event := <-fw.watcher.Events:
-			fmt.Println("xff", event.Name, event.Op)
 			switch event.Op {
 			case fsnotify.Write, fsnotify.Remove:
 				fw.syncChan <- event.Name
