@@ -105,9 +105,11 @@ func (f *Names) load() error {
 	if err := f.loadlocal(); err != nil {
 		return err
 	}
-	if err := f.loadregistry(); err != nil {
-		return err
-	}
+	/*
+		if err := f.loadregistry(); err != nil {
+		 	return err
+		}
+	*/
 	return f.refresh()
 }
 func (f *Names) refresh() error {
