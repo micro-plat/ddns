@@ -25,12 +25,16 @@ func New() (*Resolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := &Resolver{
+	r, err := remote.New()
+	if err != nil {
+		return nil, err
+	}
+	re := &Resolver{
 		log:    hydra.G.Log(),
 		local:  l,
-		remote: remote.New(),
+		remote: r,
 	}
-	return r, nil
+	return re, nil
 }
 
 //Lookup 循环所有名称服务器，以最快速度拿取解析信息，所有名称服务器都未能成功,再次从缓存中获取
