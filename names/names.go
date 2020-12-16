@@ -19,7 +19,7 @@ func New() (*Names, error) {
 	return l, nil
 }
 
-//Lookup 根据域名查询
+//Lookup 获取可用的名称服务器
 func (l *Names) Lookup() []string {
 
 	//从注册中心拉取
