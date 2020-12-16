@@ -10,6 +10,10 @@ var (
 	HOST_FILE string
 	NAME_FILE string
 
+<<<<<<< HEAD:pkgs/config_windows.go
+=======
+	registrykey=`SYSTEM\CurrentControlSet\services\Tcpip\Parameters\Interfaces`
+>>>>>>> dev1.2-ljy:dns/pkgs/config_windows.go
 )
 
 func init() {
