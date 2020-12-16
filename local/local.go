@@ -49,17 +49,17 @@ func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 	return pack(ips, req), true
 }
 
-func (l *Local) CacheItems() interface{} {
-	return l.c.Items()
-}
+// func (l *Local) CacheItems() interface{} {
+// 	return l.c.Items()
+// }
 
-func (l *Local) RegistryItems() interface{} {
-	return l.r.domains.Items()
-}
+// func (l *Local) RegistryItems() interface{} {
+// 	return l.r.domains.Items()
+// }
 
-func (l *Local) HostItems() interface{} {
-	return l.h.domain
-}
+// func (l *Local) HostItems() interface{} {
+// 	return l.h.domain
+// }
 
 //pack 对本地ip的包进行打包处理
 func pack(ips []net.IP, req *dns.Msg) *dns.Msg {
