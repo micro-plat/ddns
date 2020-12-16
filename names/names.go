@@ -10,13 +10,14 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/micro-plat/ddns/dns"
 	"github.com/micro-plat/ddns/dns/conf"
 	"github.com/micro-plat/ddns/dns/pkgs"
+	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/lib4go/file"
-	"github.com/micro-plat/lib4go/types"
-
 	"github.com/micro-plat/lib4go/logger"
+	"github.com/micro-plat/lib4go/types"
 )
 
 var defNames = []string{"127.0.1.1"}
@@ -31,12 +32,12 @@ type Names struct {
 	lk       sync.RWMutex
 }
 
-//NewNames 创建本地host文件读取对象
-func NewNames(log logger.ILogger) *Names {
+//NewNamNewes 创建本地host文件读取对象
+func New() *Names {
 	names := &Names{
 		closeCh:  make(chan struct{}),
 		syncChan: make(chan string, 100),
-		log:      log,
+		log:      hydra.G.Log(),
 	}
 	return names
 }
@@ -200,7 +201,7 @@ func (f *Names) load(path string) (types.XMap, error) {
 
 //loadRgt 加载注册中心配置dbs列表信息
 func (f *Names) loadRgt() (types.XMap, error) {
-	ddnsConf, err := app.Cache.GetAPPConf(DDNS)
+	ddnsConf, err := app.Cache.GetAPPConf(dns.DDNS)
 	if err != nil {
 		return nil, fmt.Errorf("加载注册中心dns配置信息失败:%w", err)
 	}

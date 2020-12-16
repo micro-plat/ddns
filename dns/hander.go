@@ -80,6 +80,7 @@ func (h *DNSHandler) lookupFromLocal(ip net.IP, question *Question, q dns.Questi
 	return m, nil
 }
 
+
 func (h *DNSHandler) do(net string, fromIP net.IP, w dns.ResponseWriter, req *dns.Msg) (string, *dns.Msg, error) {
 	//从缓存中查询
 	cache := true
@@ -96,45 +97,6 @@ func (h *DNSHandler) do(net string, fromIP net.IP, w dns.ResponseWriter, req *dn
 	return types.DecodeString(cache, true, "C", "R"), msg, nil
 }
 
-//Do 处理请求
-func (h *DNSHandler) Do(proto string) func(w dns.ResponseWriter, req *dns.Msg) {
-
-	return func(w dns.ResponseWriter, req *dns.Msg) {
-		start := time.Now()
-		log := logger.New("ddns_" + proto)
-		defer recovery(log, w, req)
-		var ip net.IP
-		if proto == "udp" {
-			ip = w.RemoteAddr().(*net.UDPAddr).IP
-		} else {
-			ip = w.RemoteAddr().(*net.TCPAddr).IP
-		}
-		log.Info("dns.request", proto, req.Question[0].Name, "from", ip)
-
-		from, msg, err := h.do(proto, ip, w, req)
-		if err != nil {
-			log.Error(err)
-		}
-		if msg == nil {
-			log.Warn("dns.response", proto, req.Question[0].Name, "[nil]", from, time.Since(start))
-			return
-		}
-		if len(msg.Answer) == 0 {
-			log.Warn("dns.response", proto, req.Question[0].Name, "[0]", from, time.Since(start))
-			return
-		}
-		log.Info("dns.response", proto, getAnswer(msg), from, time.Since(start))
-	}
-
-}
-func getAnswer(r *dns.Msg) string {
-	for _, answer := range r.Answer {
-		if answer != nil {
-			return fmt.Sprintf("[%s ...%d]", strings.Replace(answer.String(), "\t", " ", -1), len(r.Answer))
-		}
-	}
-	return ""
-}
 
 //Close 关闭处理程序
 func (h *DNSHandler) Close() error {
