@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/micro-plat/hydra"
@@ -33,18 +34,23 @@ func New() (*Local, error) {
 
 //Lookup 根据域名查询
 func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
-
+	fmt.Println("aaaaaaaaaaaa")
 	//从本地缓存获取
 	if msg, ok := l.c.Lookup(req); ok {
 		return msg, ok
 	}
+
+	fmt.Println("bbbbbbbbbbbbbbb")
 	ips, ok := l.r.Lookup(req)
 	if !ok {
+		fmt.Println("ccccccccccccc")
 		ips, ok = l.h.Lookup(req)
 	}
 	if !ok || len(ips) == 0 {
 		return nil, false
 	}
+
+	fmt.Println("ddddddddddddd")
 	return pack(ips, req), true
 }
 

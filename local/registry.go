@@ -155,7 +155,7 @@ func (r *Registry) loadIP(domain string) error {
 	nips := unpack(ips)
 	switch {
 	case len(nips) == 0:
-		r.domains.Clear()
+		r.domains.Remove(domain)
 	default:
 		r.domains.Set(domain, nips)
 	}
