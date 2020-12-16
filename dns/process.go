@@ -27,7 +27,7 @@ func NewProcessor() (p *Processor, err error) {
 	p.Engine.Use(middleware.Logging().DispFunc())
 	p.Engine.Use(middleware.Recovery().DispFunc())
 	p.Engine.Use(middleware.Trace().DispFunc()) //跟踪信息
-	p.Engine.Handle("GET", "/*name", p.execute().DispFunc(DDNS))
+	p.Engine.Handle(DefMethod, "/*name", p.execute().DispFunc(DDNS))
 	return p, nil
 }
 
@@ -51,7 +51,6 @@ func (p *Processor) Handle(proto string) func(w dns.ResponseWriter, req *dns.Msg
 //ExecuteHandler 业务处理Handler
 func (p *Processor) execute() middleware.Handler {
 	return func(ctx middleware.IMiddleContext) {
-
 		//处理响应
 		r, _ := ctx.Request().GetMap().Get("request")
 		req := r.(*dns.Msg)
@@ -60,14 +59,14 @@ func (p *Processor) execute() middleware.Handler {
 		writer := w.(dns.ResponseWriter)
 
 		//解析域名
-		msg, cache, err := p.resolver.Lookup(ctx.Request().Path().GetMethod(), req)
+		msg, cache, err := p.resolver.Lookup(ctx.Request().Headers().GetString("net"), req)
 		if err != nil {
 			ctx.Response().WriteAny(err)
+			return
 		}
 		if cache {
 			ctx.Response().AddSpecial("C")
 		}
-
 		//处理响应结果
 		msg.SetReply(req)
 		writer.WriteMsg(msg)

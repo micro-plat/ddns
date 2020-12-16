@@ -15,8 +15,9 @@ type IResolver interface {
 }
 
 type Resolver struct {
-	log   logger.ILogger
-	local *local.Local
+	log    logger.ILogger
+	local  *local.Local
+	remote *remote.Remote
 }
 
 func New() (*Resolver, error) {
@@ -25,8 +26,9 @@ func New() (*Resolver, error) {
 		return nil, err
 	}
 	r := &Resolver{
-		log:   hydra.G.Log(),
-		local: l,
+		log:    hydra.G.Log(),
+		local:  l,
+		remote: remote.New(),
 	}
 	return r, nil
 }
@@ -39,11 +41,10 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 	if ok {
 		return cmsg, true, nil
 	}
-
 	//查询远程服务
-	rmsg, ok := remote.Lookup(req)
-	if !ok {
-		return nil, false, fmt.Errorf("未获取到解析结果")
+	rmsg, err := r.remote.Lookup(req)
+	if err != nil {
+		return nil, false, fmt.Errorf("未获取到解析结果:%w", err)
 	}
 	//保存缓存
 	if len(rmsg.Answer) > 0 {
