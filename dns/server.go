@@ -21,7 +21,7 @@ var App = hydra.NewApp(
 	hydra.WithPlatName("ddns-test"),
 	hydra.WithSystemName("ddnsserver"),
 	hydra.WithUsage("DNS服务"),
-	hydra.WithServerTypes(DDNS, http.API, cron.CRON),
+	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"))
 
 //Server DNS服务器
@@ -37,8 +37,12 @@ type Server struct {
 
 //NewServer 构建DNS服务器
 func NewServer(cnf app.IAPPConf) (*Server, error) {
+	p, err := NewProcessor()
+	if err != nil {
+		return nil, err
+	}
 	h := &Server{
-		p:        NewProcessor(),
+		p:        p,
 		servers:  make([]*dns.Server, 2),
 		conf:     cnf,
 		log:      logger.New(cnf.GetServerConf().GetServerName()),

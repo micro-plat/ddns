@@ -15,20 +15,27 @@ type IResolver interface {
 }
 
 type Resolver struct {
-	log logger.ILogger
+	log   logger.ILogger
+	local *local.Local
 }
 
-func New() *Resolver {
-	return &Resolver{
-		log: hydra.G.Log(),
+func New() (*Resolver, error) {
+	l, err := local.New()
+	if err != nil {
+		return nil, err
 	}
+	r := &Resolver{
+		log:   hydra.G.Log(),
+		local: l,
+	}
+	return r, nil
 }
 
 //Lookup 循环所有名称服务器，以最快速度拿取解析信息，所有名称服务器都未能成功,再次从缓存中获取
 func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache bool, err error) {
 
 	//查询本地缓存
-	cmsg, ok := local.Lookup(req)
+	cmsg, ok := r.local.Lookup(req)
 	if ok {
 		return cmsg, true, nil
 	}
@@ -40,11 +47,11 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 	}
 	//保存缓存
 	if len(rmsg.Answer) > 0 {
-		local.Save2Cache(req)
+		r.local.Save2Cache(req)
 		return rmsg, false, nil
 	}
 	//再次从缓存中拉取，解决并发请求时部分请求未能从名称服务器中获取到结果的问题
-	cmsg, ok = local.Lookup(req)
+	cmsg, ok = r.local.Lookup(req)
 	if ok {
 		return cmsg, true, nil
 	}

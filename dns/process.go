@@ -14,9 +14,13 @@ type Processor struct {
 }
 
 //NewProcessor 创建processor
-func NewProcessor() (p *Processor) {
+func NewProcessor() (p *Processor, err error) {
+	r, err := resolver.New()
+	if err != nil {
+		return nil, err
+	}
 	p = &Processor{
-		resolver: resolver.New(),
+		resolver: r,
 	}
 	p.Engine = dispatcher.New()
 	p.Engine.Use(middleware.Recovery().DispFunc(DDNS))
@@ -24,7 +28,7 @@ func NewProcessor() (p *Processor) {
 	p.Engine.Use(middleware.Recovery().DispFunc())
 	p.Engine.Use(middleware.Trace().DispFunc()) //跟踪信息
 	p.Engine.Handle("GET", "/*name", p.execute().DispFunc(DDNS))
-	return p
+	return p, nil
 }
 
 //TCP 处理用户请求

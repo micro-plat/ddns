@@ -13,6 +13,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/micro-plat/ddns/pkgs"
 	"github.com/micro-plat/lib4go/logger"
+	"github.com/miekg/dns"
 )
 
 //Hosts 本地Host读取配置
@@ -52,15 +53,15 @@ func (f *Hosts) Start() (err error) {
 }
 
 //Lookup 查询域名解析结果
-func (f *Hosts) Lookup(name string) []net.IP {
+func (f *Hosts) Lookup(req *dns.Msg) ([]net.IP, bool) {
 	f.lk.RLock()
 	defer f.lk.RUnlock()
 	for _, domain := range f.domain {
-		if ips, ok := domain[name]; ok {
-			return ips
+		if ips, ok := domain[req.Question[0].Name]; ok {
+			return ips, true
 		}
 	}
-	return nil
+	return nil, false
 }
 func (f *Hosts) len() int {
 	f.lk.RLock()

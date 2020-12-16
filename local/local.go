@@ -1,49 +1,59 @@
 package local
 
 import (
-	"fmt"
 	"net"
 
+	"github.com/micro-plat/hydra"
 	"github.com/miekg/dns"
 )
 
-//localQueries 本地查询服务
-var qmaps = make(map[string]IQuery)
-var queries = make([]IQuery, 0, 1)
+type Local struct {
+	r *Registry
+	h *Hosts
+	c *Cache
+}
 
 //IQuery 查询服务
 type IQuery interface {
 	Lookup(*dns.Msg) ([]net.IP, bool)
 }
 
-//Register 注册查询服务
-func Register(name string, query IQuery) {
-	if _, ok := qmaps[name]; ok {
-		panic(fmt.Sprintf("%s:重复注册查询服务", name))
+//New 构建本地服务
+func New() (*Local, error) {
+	l := &Local{
+		r: newRegistry(),
+		h: NewHosts(hydra.G.Log()),
+		c: newCache(),
 	}
-	qmaps[name] = query
-	queries = append(queries, query)
+	if err := l.r.Start(); err != nil {
+		return nil, err
+	}
+	return l, nil
 }
 
 //Lookup 根据域名查询
-func Lookup(req *dns.Msg) (*dns.Msg, bool) {
-	var ips []net.IP
-	var ok bool
-	for _, q := range queries {
-		if ips, ok = q.Lookup(req); ok {
-			break
-		}
-	}
-	if !ok {
-		return nil, false
+func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
+
+	//从本地缓存获取
+	if msg, ok := l.c.Lookup(req); ok {
+		return msg, ok
 	}
 
-	//处理响应包
-	var msg *dns.Msg
+	ips, ok := l.r.Lookup(req)
+	if !ok {
+		ips, ok = l.h.Lookup(req)
+	}
+	if !ok || len(ips) == 0 {
+		return nil, false
+	}
+	return pack(ips, req), true
+}
+
+//pack 对本地ip的包进行打包处理
+func pack(ips []net.IP, req *dns.Msg) *dns.Msg {
 	q := req.Question[0]
 	question := NewQuestion(q)
 	m := dns.Msg{}
-	m = *msg
 	m.Id = req.Id
 	switch question.QueryType() {
 	case _IP4Query:
@@ -67,11 +77,10 @@ func Lookup(req *dns.Msg) (*dns.Msg, bool) {
 			m.Answer = append(m.Answer, &dns.AAAA{header, ip})
 		}
 	}
-
-	return &m, true
+	return &m
 }
 
 //Save2Cache 保存到缓存
-func Save2Cache(msg *dns.Msg) {
-	defCache.Set(msg.Question[0].Name, msg)
+func (l *Local) Save2Cache(msg *dns.Msg) {
+	l.c.Set(msg)
 }
