@@ -32,8 +32,8 @@ func (s pingStats) Less(i, j int) bool {
 	return left < right
 }
 
-//获取根据访问速率排序的服务列表
-func getSortedServer(server ...string) ([]string, error) {
+//Sort 获取根据访问速率排序的服务列表
+func Sort(server ...string) ([]string, error) {
 	lst := make([]*pingStat, 0, len(server))
 	var wg sync.WaitGroup
 	p := func(s string) {

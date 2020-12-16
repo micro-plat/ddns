@@ -1,5 +1,7 @@
 package names
 
+import "github.com/micro-plat/ddns/pkgs"
+
 var defNames = []string{"8.8.8.8:53"}
 
 type Names struct {
@@ -17,16 +19,25 @@ func New() (*Names, error) {
 	return l, nil
 }
 
-//Lookup 根据域名查询
+//Lookup 获取可用的名称服务器
 func (l *Names) Lookup() []string {
 
-	//从本地缓存获取
-	if names := DefRegistry.Lookup(); len(names) > 0 {
-		return names
-	}
-	if names := l.r.Lookup(); len(names) > 0 {
-		return names
-	}
-	return defNames
+	//从注册中心拉取
+	names := DefRegistry.Lookup()
 
+	//从本地拉取
+	names = append(names, l.r.Lookup()...)
+
+	//追加默认服务
+	names = append(names, defNames...)
+
+	//服务去重
+	return pkgs.Distinct(names)
+}
+
+//Close 关闭服务
+func (l *Names) Close() {
+	if l.r != nil {
+		l.r.Close()
+	}
 }

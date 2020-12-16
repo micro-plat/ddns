@@ -17,19 +17,14 @@ func GetSyncData(syncChan chan string) (files []string) {
 
 func Distinct(arr []string) (newArr []string) {
 	newArr = make([]string, 0)
-	for i := 0; i < len(arr); i++ {
-		repeat := false
-		for j := i + 1; j < len(arr); j++ {
-			if arr[i] == arr[j] {
-				repeat = true
-				break
-			}
-		}
-		if !repeat {
-			newArr = append(newArr, arr[i])
+	list := make(map[string]string)
+	for _, a := range arr {
+		if _, ok := list[a]; !ok {
+			list[a] = a
+			newArr = append(newArr, a)
 		}
 	}
-	return
+	return newArr
 }
 
 func PrepareLine(txt string) string {

@@ -10,6 +10,7 @@ import (
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/hydra/conf/server/api"
+	"github.com/micro-plat/hydra/conf/server/header"
 	"github.com/micro-plat/hydra/hydra/servers"
 	"github.com/micro-plat/hydra/hydra/servers/cron"
 	"github.com/micro-plat/hydra/hydra/servers/http"
@@ -18,12 +19,20 @@ import (
 	"github.com/miekg/dns"
 )
 
+//App dns应用程序
 var App = hydra.NewApp(
 	hydra.WithPlatName("ddns-test"),
 	hydra.WithSystemName("ddnsserver"),
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
-	hydra.WithClusterName("dns-1.2"))
+	hydra.WithClusterName("dns-1.2"),
+	hydra.WithRegistry("zk://192.168.0.101"),
+)
+
+func init() {
+	hydra.Conf.API(":9090", api.WithTimeout(300, 300)).
+		Header(header.WithCrossDomain())
+}
 
 //Server DNS服务器
 type Server struct {
@@ -62,7 +71,6 @@ func NewServer(cnf app.IAPPConf) (*Server, error) {
 //Start 启动服务器
 func (s *Server) Start() (err error) {
 	s.log.Info("开始启动[DNS]服务...")
-
 	if !s.conf.GetServerConf().IsStarted() {
 		s.log.Warnf("%s被禁用，未启动", s.conf.GetServerConf().GetServerType())
 		return
@@ -88,6 +96,12 @@ func (s *Server) Start() (err error) {
 			s.Shutdown()
 			return err
 		}
+		nnames, err := dnsconf.GetNamesConf(s.conf.GetServerConf())
+		if err != nil {
+			err = fmt.Errorf("获取配置中心的名称服务器失败:%v", err)
+			return err
+		}
+		names.DefRegistry.Notify(nnames)
 		s.log.Infof("服务启动成功(DNS,udp://%s)", s.address)
 		s.log.Infof("服务启动成功(DNS,tcp://%s)", s.address)
 		return nil
@@ -125,12 +139,6 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 		if err = s.Start(); err != nil {
 			return false, err
 		}
-		nnames, err := dnsconf.GetNamesConf(c.GetServerConf())
-		if err != nil {
-			s.log.Errorf("获取配置中心的名称服务器失败:%v", err)
-			return true, nil
-		}
-		names.DefRegistry.Notify(nnames)
 		return true, nil
 	}
 	app.Cache.Save(c)
@@ -142,6 +150,9 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 func (s *Server) Shutdown() {
 	for _, server := range s.servers {
 		server.Shutdown()
+	}
+	if s.p != nil {
+		s.p.Close()
 	}
 	s.pub.Clear()
 }

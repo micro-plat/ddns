@@ -50,7 +50,8 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 	if err != nil {
 		return nil, false, fmt.Errorf("未获取到解析结果:%w", err)
 	}
-	//保存缓存
+
+	//数据正确则保存到缓存
 	if len(rmsg.Answer) > 0 {
 		r.local.Save2Cache(rmsg)
 		return rmsg, false, nil
@@ -61,4 +62,14 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 		return cmsg, true, nil
 	}
 	return nil, true, fmt.Errorf("未获取到解析结果")
+}
+
+//Close 关闭上游服务
+func (r *Resolver) Close() {
+	if r.local != nil {
+		r.local.Close()
+	}
+	if r.remote != nil {
+		r.remote.Close()
+	}
 }
