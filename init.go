@@ -14,10 +14,10 @@ func init() {
 	hydra.Conf.Custom(dns.DDNS, conf.New(conf.WithTimeout(10, 10))).
 		Sub(conf.TypeNodeName, conf.NewNames("114.114.114.114", "8.8.8.8"))
 	dns.App.Micro("/ddns", services.NewDdnsHandler())
-	// dns.App.Micro("/github/ip/*", services.NewGithubHandler())
+	dns.App.Micro("/github/ip/*", services.NewGithubHandler())
 	// dns.App.CRON("/github/ip/*", services.NewGithubHandler(), "@midnight")
 
-	hydra.Conf.API(":8081").Static(static.WithArchive("./assert/assert.so"), static.WithRoot("./assert"), static.WithEnable())
+	hydra.Conf.API(":8081").Static(static.WithArchive(archive))
 	hydra.Conf.CRON(cron.WithMasterSlave())
 	// hydra.CRON.Add("@now", "/github/ip/request")
 

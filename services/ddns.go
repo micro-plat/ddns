@@ -76,7 +76,7 @@ func (u *DdnsHandler) PlatNamesHandle(ctx hydra.IContext) (r interface{}) {
 	}
 
 	ctx.Log().Info("3. 处理域名")
-	result := make(map[string]string, 0)
+	result := make(map[string][]string, 0)
 	for _, domain := range domains {
 		val, _, err := rgst.GetValue(registry.Join("/dns", domain))
 		if err != nil {
@@ -85,11 +85,11 @@ func (u *DdnsHandler) PlatNamesHandle(ctx hydra.IContext) (r interface{}) {
 		value := make(types.XMap, 0)
 		err = json.Unmarshal(val, &value)
 		if err != nil {
+			ctx.Log().Infof("%s处理:%v", domain, err)
 			continue
-			//return err
 		}
-		cnPlatName := value.GetString("cn_plat_name")
-		result[cnPlatName] = domain
+		key := types.GetString(value.GetString("cn_plat_name"), domain)
+		result[key] = append(result[key], domain)
 	}
 
 	return result
