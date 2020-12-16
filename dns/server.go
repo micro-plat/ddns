@@ -36,12 +36,12 @@ func NewServer(cnf app.IAPPConf) (*Server, error) {
 		pub:      pub.New(cnf.GetServerConf()),
 		comparer: conf.NewComparer(cnf.GetServerConf(), api.MainConfName, api.SubConfName...),
 	}
+	app.Cache.Save(cnf)
 	servers, err := h.getServer(cnf)
 	if err != nil {
 		return nil, err
 	}
 	h.servers = servers
-	app.Cache.Save(cnf)
 	return h, nil
 }
 

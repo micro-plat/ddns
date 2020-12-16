@@ -2,5 +2,5 @@ package pkgs
 
 const (
 	HOST_FILE = "/etc/hosts"
-	NAME_FILE = "/etc/names.conf"
+	NAME_FILE = "/etc/resolv.conf"
 )
