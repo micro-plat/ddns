@@ -1,65 +1,58 @@
 package names
 
 import (
-	"sort"
-	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/sparrc/go-ping"
+	"github.com/micro-plat/lib4go/concurrent/cmap"
 )
 
-type pingStat struct {
-	server string
-	stats  *ping.Statistics
-	err    error
+type NameRTT struct {
+	name       string
+	maxRequest int64
+	avgRTT     int64
 }
 
-type pingStats []*pingStat
+//Update 更新请求时间
+func (n *NameRTT) Update(t int64) {
+	max := atomic.AddInt64(&n.maxRequest, 1)
+	n.avgRTT = (n.avgRTT*(max-1) + t) / max
+}
 
-func (s pingStats) Len() int { return len(s) }
+type Sorter struct {
+	sorted []string
+	rtts   cmap.ConcurrentMap
+}
 
-func (s pingStats) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-func (s pingStats) Less(i, j int) bool {
-	left := time.Minute
-	right := time.Minute
-	if s[i].err == nil {
-		left = s[i].stats.AvgRtt
+func newSorter() *Sorter {
+	return &Sorter{
+		sorted: make([]string, 0, 1),
+		rtts:   cmap.New(3),
 	}
-	if s[j].err == nil {
-		right = s[j].stats.AvgRtt
-	}
-	return left < right
 }
 
 //Sort 获取根据访问速率排序的服务列表
-func Sort(server ...string) ([]string, error) {
-	lst := make([]*pingStat, 0, len(server))
-	var wg sync.WaitGroup
-	p := func(s string) {
-		defer wg.Done()
-		pinger, err := ping.NewPinger(s)
-		if err != nil {
-			lst = append(lst, &pingStat{server: s, err: err})
-			return
-		}
-		pinger.Timeout = time.Second
-		pinger.SetPrivileged(true)
-		pinger.Count = 3
-		pinger.Run() // blocks until finished
-		stats := pinger.Statistics()
-		lst = append(lst, &pingStat{server: s, stats: stats})
+func (s *Sorter) Sort(names ...string) []string {
+	if len(s.sorted) == 0 {
+		return names
 	}
+	return names
+}
 
-	for _, s := range server {
-		wg.Add(1)
-		go p(s)
+//UpdateRTT 更新请求时长
+func (s *Sorter) UpdateRTT(name string, t time.Duration) {
+	ok, rtt := s.rtts.SetIfAbsent(name, func(...interface{}) (interface{}, error) {
+		return &NameRTT{name: name, maxRequest: 1, avgRTT: int64(t)}, nil
+	})
+	nrtt := rtt.(*NameRTT)
+	if !ok {
+		nrtt.Update(int64(t))
 	}
-	wg.Wait()
-	sort.Sort(pingStats(lst))
-	nlst := make([]string, 0, len(server))
-	for _, stat := range lst {
-		nlst = append(nlst, stat.server)
+}
+func (s *Sorter) updateList() {
+	items := s.rtts.Items()
+	list := make([]*NameRTT, 0, len(items))
+	for _, v := range items {
+		list = append(list, v.(*NameRTT))
 	}
-	return nlst, nil
 }

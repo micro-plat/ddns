@@ -1,17 +1,23 @@
 package names
 
-import "github.com/micro-plat/ddns/pkgs"
+import (
+	"time"
+
+	"github.com/micro-plat/ddns/pkgs"
+)
 
 var defNames = []string{"8.8.8.8:53"}
 
 type Names struct {
-	r *ResolveConf
+	r      *ResolveConf
+	sorter *Sorter
 }
 
 //New 构建本地服务
 func New() (*Names, error) {
 	l := &Names{
-		r: NewResolveConf(),
+		r:      NewResolveConf(),
+		sorter: &Sorter{},
 	}
 	if err := l.r.Start(); err != nil {
 		return nil, err
@@ -31,8 +37,13 @@ func (l *Names) Lookup() []string {
 	//追加默认服务
 	names = append(names, defNames...)
 
-	//服务去重
-	return pkgs.Distinct(names)
+	//服务去重,并排序
+	return l.sorter.Sort(pkgs.Distinct(names)...)
+}
+
+//UpdateRTT 更新请求时长
+func (l *Names) UpdateRTT(name string, t time.Duration) {
+	l.sorter.UpdateRTT(name, t)
 }
 
 //Close 关闭服务
