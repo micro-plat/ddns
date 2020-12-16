@@ -1,23 +1,10 @@
 package names
 
 import (
-	"sync/atomic"
 	"time"
 
 	"github.com/micro-plat/lib4go/concurrent/cmap"
 )
-
-type NameRTT struct {
-	name       string
-	maxRequest int64
-	avgRTT     int64
-}
-
-//Update 更新请求时间
-func (n *NameRTT) Update(t int64) {
-	max := atomic.AddInt64(&n.maxRequest, 1)
-	n.avgRTT = (n.avgRTT*(max-1) + t) / max
-}
 
 type Sorter struct {
 	sorted []string
@@ -51,8 +38,9 @@ func (s *Sorter) UpdateRTT(name string, t time.Duration) {
 }
 func (s *Sorter) updateList() {
 	items := s.rtts.Items()
-	list := make([]*NameRTT, 0, len(items))
+	list := make(RTTS, 0, len(items))
 	for _, v := range items {
 		list = append(list, v.(*NameRTT))
 	}
+
 }
