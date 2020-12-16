@@ -14,7 +14,10 @@ const (
 )
 
 func WatchNameFile(closeCh chan struct{}, nameCh chan []string) {
-	last, _ := GetNameServers()
+	last, err := GetNameServers()
+	if err != nil {
+		panic(err)
+	}
 	period := time.Minute
 	ticker := time.NewTicker(period)
 	for {
