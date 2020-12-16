@@ -246,7 +246,7 @@ func (f *Hosts) syncFileChange() {
 			ticker.Stop()
 			files := pkgs.GetSyncData(f.syncChan)
 			if len(files) > 0 {
-				files = pkgs.RemoveRepeat(files)
+				files = pkgs.Distinct(files)
 			}
 
 			for i := range files {

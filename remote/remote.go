@@ -23,7 +23,7 @@ type Remote struct {
 //New 构建远程解析器
 func New() *Remote {
 	return &Remote{
-		names: names.New(),
+		names: names.NewNames(),
 	}
 }
 
