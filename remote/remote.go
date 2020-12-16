@@ -47,7 +47,9 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 			}
 			return
 		}
-		r.names.UpdateRTT(nameserver, rtt)
+
+		//异步更新rtt
+		go r.names.UpdateRTT(nameserver, rtt)
 		if res != nil {
 			if res.Rcode == dns.RcodeServerFailure {
 				select {

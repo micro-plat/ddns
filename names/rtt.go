@@ -10,6 +10,7 @@ type NameRTT struct {
 
 //Update 更新请求时间
 func (n *NameRTT) Update(t int64) {
+	atomic.CompareAndSwapInt64(&n.maxRequest, 1<<30, 1000)
 	max := atomic.AddInt64(&n.maxRequest, 1)
 	n.avgRTT = (n.avgRTT*(max-1) + t) / max
 }
