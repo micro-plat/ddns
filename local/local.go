@@ -35,12 +35,13 @@ func New() (*Local, error) {
 func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 
 	//从本地缓存获取
-	if msg, ok := l.c.Lookup(req); ok {
+	domain := TrimDomain(req.Question[0].Name)
+	if msg, ok := l.c.Lookup(domain, req); ok {
 		return msg, ok
 	}
-	ips, ok := l.r.Lookup(req)
+	ips, ok := l.r.Lookup(domain)
 	if !ok {
-		ips, ok = l.h.Lookup(req)
+		ips, ok = l.h.Lookup(domain)
 	}
 	if !ok || len(ips) == 0 {
 		return nil, false
@@ -93,7 +94,8 @@ func pack(ips []net.IP, req *dns.Msg) *dns.Msg {
 
 //Save2Cache 保存到缓存
 func (l *Local) Save2Cache(msg *dns.Msg) {
-	l.c.Set(msg)
+	name := TrimDomain(msg.Question[0].Name)
+	l.c.Set(name, msg)
 }
 
 //Close 关闭服务
