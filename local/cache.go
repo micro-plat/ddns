@@ -37,7 +37,3 @@ func (c *Cache) Set(name string, msg *dns.Msg) {
 	c.cache.Set(name, msg, time.Minute)
 
 }
-
-// func (c *Cache) Items() map[string]cache.Item {
-// 	return c.cache.Items()
-// }
