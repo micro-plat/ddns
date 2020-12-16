@@ -10,6 +10,7 @@ import (
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/hydra/conf/server/api"
+	"github.com/micro-plat/hydra/conf/server/header"
 	"github.com/micro-plat/hydra/hydra/servers"
 	"github.com/micro-plat/hydra/hydra/servers/cron"
 	"github.com/micro-plat/hydra/hydra/servers/http"
@@ -18,6 +19,7 @@ import (
 	"github.com/miekg/dns"
 )
 
+//App dns应用程序
 var App = hydra.NewApp(
 	hydra.WithPlatName("ddns-test"),
 	hydra.WithSystemName("ddnsserver"),
@@ -26,6 +28,11 @@ var App = hydra.NewApp(
 	hydra.WithClusterName("dns-1.2"),
 	hydra.WithRegistry("zk://192.168.0.101"),
 )
+
+func init() {
+	hydra.Conf.API(":9090", api.WithTimeout(300, 300)).
+		Header(header.WithCrossDomain())
+}
 
 //Server DNS服务器
 type Server struct {
@@ -145,6 +152,9 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 func (s *Server) Shutdown() {
 	for _, server := range s.servers {
 		server.Shutdown()
+	}
+	if s.p != nil {
+		s.p.Close()
 	}
 	s.pub.Clear()
 }

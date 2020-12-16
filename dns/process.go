@@ -71,6 +71,13 @@ func (p *Processor) execute() middleware.Handler {
 		msg.SetReply(req)
 		writer.WriteMsg(msg)
 		ctx.Response().WriteAny(msg)
-
 	}
+}
+
+//Close 关闭上游服务
+func (p *Processor) Close() {
+	if p.resolver != nil {
+		p.resolver.Close()
+	}
+
 }
