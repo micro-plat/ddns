@@ -27,7 +27,7 @@ func NewProcessor() (p *Processor, err error) {
 	p.Engine.Use(middleware.Logging().DispFunc())
 	p.Engine.Use(middleware.Recovery().DispFunc())
 	p.Engine.Use(middleware.Trace().DispFunc()) //跟踪信息
-	p.Engine.Handle(DefMethod, "/", p.execute().DispFunc(DDNS))
+	p.Engine.Handle(DefMethod, "/*name", p.execute().DispFunc(DDNS))
 	return p, nil
 }
 
@@ -51,8 +51,6 @@ func (p *Processor) Handle(proto string) func(w dns.ResponseWriter, req *dns.Msg
 //ExecuteHandler 业务处理Handler
 func (p *Processor) execute() middleware.Handler {
 	return func(ctx middleware.IMiddleContext) {
-
-		ctx.Log().Debug("excute")
 		//处理响应
 		r, _ := ctx.Request().GetMap().Get("request")
 		req := r.(*dns.Msg)
