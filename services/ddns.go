@@ -94,8 +94,3 @@ func (u *DdnsHandler) PlatNamesHandle(ctx hydra.IContext) (r interface{}) {
 
 	return result
 }
-
-//PlatNamesHandle 查询平台名及对应的域名信息
-func (u *DdnsHandler) qqqHandle(ctx hydra.IContext) (r interface{}) {
-	return
-}
