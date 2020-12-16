@@ -26,6 +26,7 @@ func (c *Cache) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 		m := dns.Msg{}
 		m = *msg
 		m.Id = req.Id
+		m.Answer = msg.Answer
 		return &m, true
 	}
 	return nil, false
