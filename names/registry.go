@@ -24,12 +24,11 @@ func (f *Registry) Lookup() []string {
 }
 
 //Notify 加载注册中心配置dbs列表信息
-func (f *Registry) Notify(names *conf.Names) error {
+func (f *Registry) Notify(names *conf.Names) {
 	nnames := joinHostPort(names.IPS)
 	f.lk.Lock()
 	defer f.lk.Unlock()
 	f.names = nnames
-	return nil
 }
 
 func joinHostPort(ips []string) []string {
