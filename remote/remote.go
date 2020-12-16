@@ -2,6 +2,7 @@ package remote
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/micro-plat/ddns/names"
@@ -28,13 +29,16 @@ func New() (*Remote, error) {
 func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 	//查询名称服务器，并处理结果
 	c := &dns.Client{
-		ReadTimeout:  time.Second * 30,
-		WriteTimeout: time.Second * 30,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
 	}
-
-	response := make(chan *dns.Msg, 1)
+	names := r.names.Lookup()
+	response := make(chan *dns.Msg, len(names))
 	errChan := make(chan error, 1)
+	wait := sync.WaitGroup{}
 	lookup := func(nameserver string) {
+		wait.Add(1)
+		defer wait.Done()
 		res, _, err1 := c.Exchange(req, nameserver)
 		if err1 != nil {
 			select {
@@ -52,17 +56,13 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 				return
 			}
 		}
-		select {
-		case response <- res:
-		default:
-		}
-
+		response <- res
 	}
 
 	//循环所有名称服务器，每个服务器等待500毫秒，未拿到解析结果则发起下一个名称解析
 	ticker := time.NewTicker(time.Millisecond * 500)
 	defer ticker.Stop()
-	names := r.names.Lookup()
+
 LOOP:
 	for _, host := range names {
 		go lookup(host)
@@ -79,16 +79,30 @@ LOOP:
 	}
 
 	//处理返回结果
-	select {
-	case re := <-response:
-		return re, nil
-	case <-time.After(time.Second * 30):
+	timeout := make(chan struct{})
+	go func() {
+		wait.Wait()
+		close(timeout)
+	}()
+	for {
 		select {
-		case err := <-errChan:
-			return nil, err
-		default:
-			qname := req.Question[0].Name
-			return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
+		case re := <-response:
+			if len(re.Answer) > 0 {
+				return re, nil
+			}
+		case <-timeout:
+			select {
+			case re := <-response:
+				if len(re.Answer) > 0 {
+					return re, nil
+				}
+			case err := <-errChan:
+				return nil, err
+			default:
+				qname := req.Question[0].Name
+				return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
+			}
+
 		}
 	}
 }
