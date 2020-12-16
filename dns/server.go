@@ -4,15 +4,25 @@ import (
 	"fmt"
 	"time"
 
-	dnsconf "github.com/micro-plat/ddns/dns/conf"
+	dnsconf "github.com/micro-plat/ddns/conf"
+	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/hydra/conf/server/api"
 	"github.com/micro-plat/hydra/hydra/servers"
+	"github.com/micro-plat/hydra/hydra/servers/cron"
+	"github.com/micro-plat/hydra/hydra/servers/http"
 	"github.com/micro-plat/hydra/registry/pub"
 	"github.com/micro-plat/lib4go/logger"
 	"github.com/miekg/dns"
 )
+
+var App = hydra.NewApp(
+	hydra.WithPlatName("ddns-test"),
+	hydra.WithSystemName("ddnsserver"),
+	hydra.WithUsage("DNS服务"),
+	hydra.WithServerTypes(DDNS, http.API, cron.CRON),
+	hydra.WithClusterName("dns-1.2"))
 
 //Server DNS服务器
 type Server struct {
