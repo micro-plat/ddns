@@ -22,7 +22,9 @@ var App = hydra.NewApp(
 	hydra.WithSystemName("ddnsserver"),
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
-	hydra.WithClusterName("dns-1.2"))
+	hydra.WithClusterName("dns-1.2"),
+	hydra.WithRegistry("zk://192.168.0.101"),
+)
 
 //Server DNS服务器
 type Server struct {
@@ -49,19 +51,18 @@ func NewServer(cnf app.IAPPConf) (*Server, error) {
 		pub:      pub.New(cnf.GetServerConf()),
 		comparer: conf.NewComparer(cnf.GetServerConf(), api.MainConfName, api.SubConfName...),
 	}
+	app.Cache.Save(cnf)
 	servers, err := h.getServer(cnf)
 	if err != nil {
 		return nil, err
 	}
 	h.servers = servers
-	app.Cache.Save(cnf)
 	return h, nil
 }
 
 //Start 启动服务器
 func (s *Server) Start() (err error) {
 	s.log.Info("开始启动[DNS]服务...")
-
 	if !s.conf.GetServerConf().IsStarted() {
 		s.log.Warnf("%s被禁用，未启动", s.conf.GetServerConf().GetServerType())
 		return
@@ -107,14 +108,16 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 	}
 	if s.comparer.IsValueChanged() || s.comparer.IsSubConfChanged() {
 		s.log.Info("关键配置发生变化，准备重启服务器")
+		oldconf, _ := app.Cache.GetAPPConf(DDNS)
+		app.Cache.Save(c)
 		servers, err := s.getServer(c)
 		if err != nil {
+			app.Cache.Save(oldconf)
 			return false, err
 		}
 
 		s.Shutdown()
 		s.conf = c
-		app.Cache.Save(c)
 		if !c.GetServerConf().IsStarted() {
 			s.log.Warn("dns服务被禁用，不用重启")
 			return true, nil
