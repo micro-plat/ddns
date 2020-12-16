@@ -59,12 +59,12 @@ func NewServer(cnf app.IAPPConf) (*Server, error) {
 		pub:      pub.New(cnf.GetServerConf()),
 		comparer: conf.NewComparer(cnf.GetServerConf(), api.MainConfName, api.SubConfName...),
 	}
-	app.Cache.Save(cnf)
 	servers, err := h.getServer(cnf)
 	if err != nil {
 		return nil, err
 	}
 	h.servers = servers
+	app.Cache.Save(cnf)
 	return h, nil
 }
 
@@ -96,6 +96,12 @@ func (s *Server) Start() (err error) {
 			s.Shutdown()
 			return err
 		}
+		nnames, err := dnsconf.GetNamesConf(s.conf.GetServerConf())
+		if err != nil {
+			err = fmt.Errorf("获取配置中心的名称服务器失败:%v", err)
+			return err
+		}
+		names.DefRegistry.Notify(nnames)
 		s.log.Infof("服务启动成功(DNS,udp://%s)", s.address)
 		s.log.Infof("服务启动成功(DNS,tcp://%s)", s.address)
 		return nil
@@ -116,16 +122,14 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 	}
 	if s.comparer.IsValueChanged() || s.comparer.IsSubConfChanged() {
 		s.log.Info("关键配置发生变化，准备重启服务器")
-		oldconf, _ := app.Cache.GetAPPConf(DDNS)
-		app.Cache.Save(c)
 		servers, err := s.getServer(c)
 		if err != nil {
-			app.Cache.Save(oldconf)
 			return false, err
 		}
 
 		s.Shutdown()
 		s.conf = c
+		app.Cache.Save(c)
 		if !c.GetServerConf().IsStarted() {
 			s.log.Warn("dns服务被禁用，不用重启")
 			return true, nil
@@ -135,12 +139,6 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 		if err = s.Start(); err != nil {
 			return false, err
 		}
-		nnames, err := dnsconf.GetNamesConf(c.GetServerConf())
-		if err != nil {
-			s.log.Errorf("获取配置中心的名称服务器失败:%v", err)
-			return true, nil
-		}
-		names.DefRegistry.Notify(nnames)
 		return true, nil
 	}
 	app.Cache.Save(c)
