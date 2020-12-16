@@ -20,8 +20,8 @@ func newCache() *Cache {
 }
 
 //Lookup 查询域名解析
-func (c *Cache) Lookup(req *dns.Msg) (*dns.Msg, bool) {
-	if v, ok := c.cache.Get(req.Question[0].Name); ok {
+func (c *Cache) Lookup(domain string, req *dns.Msg) (*dns.Msg, bool) {
+	if v, ok := c.cache.Get(domain); ok {
 		msg := v.(*dns.Msg)
 		m := dns.Msg{}
 		m = *msg
@@ -33,6 +33,7 @@ func (c *Cache) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 }
 
 //Set 保存到缓存
-func (c *Cache) Set(msg *dns.Msg) {
-	c.cache.Set(msg.Question[0].Name, msg, time.Minute)
+func (c *Cache) Set(name string, msg *dns.Msg) {
+	c.cache.Set(name, msg, time.Minute)
+
 }

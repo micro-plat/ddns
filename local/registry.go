@@ -9,7 +9,6 @@ import (
 	"github.com/micro-plat/hydra/registry/watcher"
 	"github.com/micro-plat/lib4go/concurrent/cmap"
 	"github.com/micro-plat/lib4go/logger"
-	"github.com/miekg/dns"
 )
 
 //Registry 注册中心
@@ -65,8 +64,8 @@ func (r *Registry) loopWatch() {
 }
 
 //Lookup 查询域名解析结果
-func (r *Registry) Lookup(req *dns.Msg) ([]net.IP, bool) {
-	v, ok := r.domains.Get(req.Question[0].Name)
+func (r *Registry) Lookup(domain string) ([]net.IP, bool) {
+	v, ok := r.domains.Get(domain)
 	if !ok {
 		return nil, false
 	}
@@ -76,7 +75,6 @@ func (r *Registry) Lookup(req *dns.Msg) ([]net.IP, bool) {
 
 //Load 加载所有域名的IP信息
 func (r *Registry) load() error {
-
 	//拉取所有域名
 	cdomains, err := r.getAllDomains()
 	if err != nil {
@@ -140,8 +138,7 @@ func (r *Registry) getAllDomains() (map[string]bool, error) {
 	}
 	m := make(map[string]bool)
 	for _, v := range paths {
-		m[v] = true
-
+		m[TrimDomain(v)] = true
 	}
 	return m, nil
 }
@@ -155,7 +152,7 @@ func (r *Registry) loadIP(domain string) error {
 	nips := unpack(ips)
 	switch {
 	case len(nips) == 0:
-		r.domains.Clear()
+		r.domains.Remove(domain)
 	default:
 		r.domains.Set(domain, nips)
 	}
