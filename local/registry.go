@@ -110,7 +110,7 @@ func (r *Registry) load() error {
 			if err != nil {
 				return nil, err
 			}
-			//处理子域名监控
+			//处理域名监控
 			recv := func(domain string, notify chan *watcher.ChildChangeArgs) {
 				for {
 					select {
@@ -164,7 +164,9 @@ func unpack(lst []string) []net.IP {
 	ips := make([]net.IP, 0, 1)
 	for _, v := range lst {
 		args := strings.SplitN(v, "_", 2)
-		ips = append(ips, net.ParseIP(args[0]))
+		if ip := net.ParseIP(args[0]); ip != nil {
+			ips = append(ips, ip)
+		}
 	}
 	return ips
 }
@@ -172,5 +174,27 @@ func unpack(lst []string) []net.IP {
 //Close 关闭当前服务
 func (r *Registry) Close() error {
 	close(r.closeCh)
+	return nil
+}
+
+//Update 更新域名的ip列表
+func (r *Registry) Update(domain string, ips ...string) error {
+	domainPath := registry.Join(r.root, domain)
+	b, err := r.r.Exists(domainPath)
+	if err != nil {
+		return err
+	}
+	if b {
+		if err := r.r.Delete(domainPath); err != nil {
+			return err
+		}
+	}
+
+	for _, ip := range ips {
+		ippath := registry.Join(domainPath, ip)
+		if err := r.r.CreatePersistentNode(ippath, "{}"); err != nil {
+			return err
+		}
+	}
 	return nil
 }
