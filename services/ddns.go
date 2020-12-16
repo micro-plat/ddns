@@ -85,11 +85,17 @@ func (u *DdnsHandler) PlatNamesHandle(ctx hydra.IContext) (r interface{}) {
 		value := make(types.XMap, 0)
 		err = json.Unmarshal(val, &value)
 		if err != nil {
-			return err
+			continue
+			//return err
 		}
 		cnPlatName := value.GetString("cn_plat_name")
 		result[cnPlatName] = domain
 	}
 
 	return result
+}
+
+//PlatNamesHandle 查询平台名及对应的域名信息
+func (u *DdnsHandler) qqqHandle(ctx hydra.IContext) (r interface{}) {
+	return
 }

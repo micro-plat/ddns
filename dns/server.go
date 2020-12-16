@@ -26,7 +26,7 @@ var App = hydra.NewApp(
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"),
-	hydra.WithRegistry("zk://192.168.0.101"),
+	// hydra.WithRegistry("zk://192.168.0.101"),
 )
 
 func init() {
@@ -47,23 +47,19 @@ type Server struct {
 
 //NewServer 构建DNS服务器
 func NewServer(cnf app.IAPPConf) (*Server, error) {
-	p, err := NewProcessor()
-	if err != nil {
-		return nil, err
-	}
 	h := &Server{
-		p:        p,
 		servers:  make([]*dns.Server, 2),
 		conf:     cnf,
 		log:      logger.New(cnf.GetServerConf().GetServerName()),
 		pub:      pub.New(cnf.GetServerConf()),
 		comparer: conf.NewComparer(cnf.GetServerConf(), api.MainConfName, api.SubConfName...),
 	}
-	servers, err := h.getServer(cnf)
+	servers, process, err := h.getServer(cnf)
 	if err != nil {
 		return nil, err
 	}
 	h.servers = servers
+	h.p = process
 	app.Cache.Save(cnf)
 	return h, nil
 }
@@ -122,21 +118,23 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 	}
 	if s.comparer.IsValueChanged() || s.comparer.IsSubConfChanged() {
 		s.log.Info("关键配置发生变化，准备重启服务器")
-		servers, err := s.getServer(c)
+		servers, process, err := s.getServer(c)
 		if err != nil {
 			return false, err
 		}
-
 		s.Shutdown()
 		s.conf = c
+		s.p = process
 		app.Cache.Save(c)
 		if !c.GetServerConf().IsStarted() {
+			process.Close()
 			s.log.Warn("dns服务被禁用，不用重启")
 			return true, nil
 		}
 
 		s.servers = servers
 		if err = s.Start(); err != nil {
+			process.Close()
 			return false, err
 		}
 		return true, nil
@@ -180,18 +178,23 @@ func (s *Server) serve(ds *dns.Server) error {
 	}
 }
 
-func (s *Server) getServer(cnf app.IAPPConf) (servers []*dns.Server, err error) {
+func (s *Server) getServer(cnf app.IAPPConf) (servers []*dns.Server, p *Processor, err error) {
+	p, err = NewProcessor()
+	if err != nil {
+		return nil, nil, err
+	}
 	dnsConf, err := dnsconf.GetConf(cnf.GetServerConf())
 	if err != nil {
-		return nil, err
+		p.Close()
+		return nil, nil, err
 	}
 
 	s.address = dnsConf.GetAddress()
 	tcpHandler := dns.NewServeMux()
-	tcpHandler.HandleFunc(".", s.p.TCP())
+	tcpHandler.HandleFunc(".", p.TCP())
 
 	udpHandler := dns.NewServeMux()
-	udpHandler.HandleFunc(".", s.p.UDP())
+	udpHandler.HandleFunc(".", p.UDP())
 
 	tcpServer := &dns.Server{Addr: s.address,
 		Net:          "tcp",
@@ -208,7 +211,7 @@ func (s *Server) getServer(cnf app.IAPPConf) (servers []*dns.Server, err error) 
 
 	servers = append(servers, tcpServer)
 	servers = append(servers, udpServer)
-	return servers, nil
+	return servers, p, nil
 }
 
 func init() {

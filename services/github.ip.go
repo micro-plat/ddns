@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/chromedp/chromedp"
-	"github.com/micro-plat/lib4go/types"
 )
 
-var address = []string{"github.com", "developer.github.com", "github.global.ssl.fastly.net", "assets-cdn.github.com"}
+var address = map[string]string{
+	"github.com":                   "https://github.com.ipaddress.com",
+	"assets-cdn.github.com":        "https://github.com.ipaddress.com/assets-cdn.github.com",
+	"github.global.ssl.fastly.net": "https://fastly.net.ipaddress.com/github.global.ssl.fastly.net",
+}
 
-var pageURL = "http://tool.chinaz.com/dns?type=1&host="
 var checkURL = "https://github.com/"
 
 // getIP 获取ip
@@ -26,28 +27,14 @@ func getIP(text string, address string) (string, error) {
 		return "", err
 	}
 	ipA := ""
-	ttlA := 0
-	dom.Find("li.ReListCent").Each(func(i int, contentSelection *goquery.Selection) {
-		ip := contentSelection.Find("div.w60-0").Text()
-		ttl := contentSelection.Find("div.w14-0").Text()
-		_, err := strconv.ParseFloat(ttl, 64)
-		if err == nil && ip != "-" {
-			// 匹配ip
-			re, err := regexp.Compile("((?:(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d))")
-			if err != nil {
-				log.Fatal(err)
-			}
-			if ttlA == 0 {
-				ttlA = types.GetInt(ttl)
-				ipA = re.FindString(ip)
-			}
-			if types.GetInt(ttl) > ttlA {
-				ttlA = types.GetInt(ttl)
-				ipA = re.FindString(ip)
-			}
+	dom.Find("table.table-v tbody tr td ul.comma-separated,table.faq tbody tr td ul").Each(func(i int, contentSelection *goquery.Selection) {
+		ip := contentSelection.Find("li").Text()
+		re, err := regexp.Compile("((?:(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d?\\d))")
+		if err != nil {
+			log.Fatal(err)
 		}
+		ipA = re.FindString(ip)
 	})
-
 	return ipA, nil
 }
 
@@ -63,8 +50,8 @@ func GetGithubDomains() (domains []*Domain, err error) {
 	defer cancel()
 
 	var res string
-	for _, v := range address {
-		url := pageURL + v
+	for k, v := range address {
+		url := v
 		err = chromedp.Run(ctx, chromedp.Tasks{
 			chromedp.Navigate(url),
 			chromedp.Sleep(5 * time.Second),
@@ -82,7 +69,7 @@ func GetGithubDomains() (domains []*Domain, err error) {
 		if ip == "" {
 			continue
 		}
-		domains = append(domains, &Domain{Domain: v, IP: ip})
+		domains = append(domains, &Domain{Domain: k, IP: ip})
 	}
 	return
 }
