@@ -27,19 +27,18 @@ var App = hydra.NewApp(
 //Server DNS服务器
 type Server struct {
 	conf     app.IAPPConf
+	p        *Processor
 	address  string
 	servers  []*dns.Server
-	rTimeout time.Duration
-	wTimeout time.Duration
 	log      logger.ILogger
 	pub      pub.IPublisher
-	hander   *DNSHandler
 	comparer conf.IComparer
 }
 
 //NewServer 构建DNS服务器
 func NewServer(cnf app.IAPPConf) (*Server, error) {
 	h := &Server{
+		p:        NewProcessor(),
 		servers:  make([]*dns.Server, 2),
 		conf:     cnf,
 		log:      logger.New(cnf.GetServerConf().GetServerName()),
@@ -133,15 +132,12 @@ func (s *Server) Shutdown() {
 	for _, server := range s.servers {
 		server.Shutdown()
 	}
-	if s.hander != nil {
-		s.hander.Close()
-	}
 	s.pub.Clear()
 }
 
 //publish 将当前服务器的节点信息发布到注册中心
-func (w *Server) publish() (err error) {
-	if err := w.pub.Publish(w.address, "tcp-udp://"+w.address, w.conf.GetServerConf().GetServerID()); err != nil {
+func (s *Server) publish() (err error) {
+	if err := s.pub.Publish(s.address, "tcp-udp://"+s.address, s.conf.GetServerConf().GetServerID()); err != nil {
 		return err
 	}
 	return
@@ -169,17 +165,11 @@ func (s *Server) getServer(cnf app.IAPPConf) (servers []*dns.Server, err error) 
 	}
 
 	s.address = dnsConf.GetAddress()
-	s.hander, err = NewHandler(s.log)
-	if err != nil {
-		App.Close()
-		return nil, fmt.Errorf("构建DNS处理服务失败:%w", err)
-	}
-
 	tcpHandler := dns.NewServeMux()
-	tcpHandler.HandleFunc(".", s.hander.Do("tcp"))
+	tcpHandler.HandleFunc(".", s.p.TCP())
 
 	udpHandler := dns.NewServeMux()
-	udpHandler.HandleFunc(".", s.hander.Do("udp"))
+	udpHandler.HandleFunc(".", s.p.UDP())
 
 	tcpServer := &dns.Server{Addr: s.address,
 		Net:          "tcp",

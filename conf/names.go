@@ -23,8 +23,8 @@ func NewNames(ips ...string) *Names {
 	return &Names{IPS: []string{"114.114.114.114", "8.8.8.8"}}
 }
 
-//GetSubConf .
-func GetSubConf(cnf conf.IServerConf) (names *Names, err error) {
+//GetNamesConf .
+func GetNamesConf(cnf conf.IServerConf) (names *Names, err error) {
 	names = &Names{IPS: []string{}}
 	_, err = cnf.GetSubObject(TypeNodeName, names)
 	if err == conf.ErrNoSetting {

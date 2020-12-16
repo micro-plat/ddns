@@ -23,8 +23,18 @@ func NewProcessor() (p *Processor) {
 	p.Engine.Use(middleware.Logging().DispFunc())
 	p.Engine.Use(middleware.Recovery().DispFunc())
 	p.Engine.Use(middleware.Trace().DispFunc()) //跟踪信息
-	p.Engine.Handle("GET", "*", p.execute().DispFunc(DDNS))
+	p.Engine.Handle("GET", "/*name", p.execute().DispFunc(DDNS))
 	return p
+}
+
+//TCP 处理用户请求
+func (p *Processor) TCP() func(w dns.ResponseWriter, req *dns.Msg) {
+	return p.Handle("tcp")
+}
+
+//UDP 处理用户请求
+func (p *Processor) UDP() func(w dns.ResponseWriter, req *dns.Msg) {
+	return p.Handle("udp")
 }
 
 //Handle 处理用户请求
