@@ -26,6 +26,7 @@ func NewRequest(proto string, w dns.ResponseWriter, req *dns.Msg) (r *Request) {
 		form:   make(map[string]interface{}),
 		header: make(map[string]string),
 	}
+	r.header["net"] = proto
 	r.header["Content-Type"] = "__raw__"
 	if proto == "udp" {
 		r.header["Client-IP"] = w.RemoteAddr().(*net.UDPAddr).IP.String()
@@ -42,17 +43,17 @@ func NewRequest(proto string, w dns.ResponseWriter, req *dns.Msg) (r *Request) {
 
 //GetName 获取任务名称
 func (m *Request) GetName() string {
-	return m.req.Question[0].Name
+	return "/"
 }
 
 //GetService 服务名
 func (m *Request) GetService() string {
-	return "."
+	return "/"
 }
 
 //GetMethod 方法名
 func (m *Request) GetMethod() string {
-	return m.method
+	return DefMethod
 }
 
 //GetForm 输入参数
