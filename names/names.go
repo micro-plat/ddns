@@ -21,10 +21,17 @@ func New() (*Names, error) {
 
 //Lookup 根据域名查询
 func (l *Names) Lookup() []string {
-	//从本地缓存获取
+
+	//从注册中心拉取
 	names := DefRegistry.Lookup()
+
+	//从本地拉取
 	names = append(names, l.r.Lookup()...)
+
+	//追加默认服务
 	names = append(names, defNames...)
+
+	//服务去重
 	return pkgs.Distinct(names)
 }
 
