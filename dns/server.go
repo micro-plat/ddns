@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dnsconf "github.com/micro-plat/ddns/conf"
+	"github.com/micro-plat/ddns/names"
 	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/conf/app"
@@ -124,6 +125,12 @@ func (s *Server) Notify(c app.IAPPConf) (bool, error) {
 		if err = s.Start(); err != nil {
 			return false, err
 		}
+		nnames, err := dnsconf.GetNamesConf(c.GetServerConf())
+		if err != nil {
+			s.log.Errorf("获取配置中心的名称服务器失败:%v", err)
+			return true, nil
+		}
+		names.DefRegistry.Notify(nnames)
 		return true, nil
 	}
 	app.Cache.Save(c)

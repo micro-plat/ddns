@@ -70,7 +70,8 @@ func (r *Registry) Lookup(req *dns.Msg) ([]net.IP, bool) {
 	if !ok {
 		return nil, false
 	}
-	return v.([]net.IP), true
+	ips := v.([]net.IP)
+	return ips, len(ips) > 0
 }
 
 //Load 加载所有域名的IP信息
