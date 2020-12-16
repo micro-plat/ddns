@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time" 
+	"time"
 
-	"github.com/golang/sys/windows/registry"
+	"golang.org/x/sys/windows/registry"
 )
 
 const (
@@ -14,8 +14,8 @@ const (
 )
 
 func WatchNameFile(closeCh chan struct{}, nameCh chan []string) {
-	last := GetNameServers()
-	period := time.Second * 5
+	last, _ := GetNameServers()
+	period := time.Minute
 	ticker := time.NewTicker(period)
 	for {
 		select {
@@ -23,7 +23,7 @@ func WatchNameFile(closeCh chan struct{}, nameCh chan []string) {
 			return
 		case <-ticker.C:
 			ticker.Stop()
-			news := GetNameServers()
+			news, _ := GetNameServers()
 
 			if len(news) != len(last) {
 				last = news
@@ -48,30 +48,29 @@ func WatchNameFile(closeCh chan struct{}, nameCh chan []string) {
 
 func GetNameServers() (nameserver []string, err error) {
 	rootkey, err := registry.OpenKey(registry.LOCAL_MACHINE, registrykey, registry.QUERY_VALUE)
-
 	if err != nil {
 		err = fmt.Errorf(`读取HKEY_LOCAL_MACHINE\%s失败：%w`, registrykey, err)
 		return
 	}
 	defer rootkey.Close()
-
-	subKeys, err := rootkey.ReadSubKeyNames(rootkey.SubKeyCount)
+	info, err := rootkey.Stat()
+	subKeys, err := rootkey.ReadSubKeyNames(int(info.SubKeyCount))
 	if err != nil {
 		err = fmt.Errorf(`读取HKEY_LOCAL_MACHINE\%s 子节点失败：%w`, registrykey, err)
 		return
 	}
 
-	for i, sk := range subKeys {
-		regsubkey, err := registry.OpenKey(registry.LOCAL_MACHINE, registrykey+`\`+sk, registry.QUERY_VALUE)
-		if err != nil {
-			err = fmt.Errorf(`读取HKEY_LOCAL_MACHINE\%s 子节点失败：%w`, registrykey, err)
+	for _, sk := range subKeys {
+		regsubkey, err1 := registry.OpenKey(registry.LOCAL_MACHINE, registrykey+`\`+sk, registry.QUERY_VALUE)
+		if err1 != nil {
+			err = fmt.Errorf(`读取HKEY_LOCAL_MACHINE\%s 子节点失败：%w`, registrykey, err1)
 			return
 		}
 		val, _, err := regsubkey.GetStringValue("NameServer")
 		if err != nil {
 			continue
 		}
-		nameserver = append(nameserver, val...)
+		nameserver = append(nameserver, strings.Split(strings.TrimSpace(val), ",")...)
 	}
 	nameserver = Distinct(nameserver)
 	sort.Strings(nameserver)

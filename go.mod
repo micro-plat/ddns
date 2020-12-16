@@ -18,5 +18,6 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/sparrc/go-ping v0.0.0-20190613174326-4e5b6552494c
 	github.com/zkfy/go-cache v2.1.0+incompatible
+	golang.org/x/sys v0.0.0-20201015000850-e3ed0017c211
 	gopkg.in/fsnotify.v1 v1.4.7
 )
