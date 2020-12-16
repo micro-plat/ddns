@@ -1,8 +1,7 @@
 package pkgs
 
 import (
-	"fmt"
-	"os"
+ 	"os"
 	"time"
 
 	"github.com/micro-plat/lib4go/types"
