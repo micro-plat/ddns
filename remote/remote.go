@@ -58,6 +58,7 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 	ticker := time.NewTicker(time.Millisecond * 500)
 	defer ticker.Stop()
 	names := r.names.Lookup()
+LOOP:
 	for _, host := range names {
 		go lookup(host)
 		select {
@@ -66,7 +67,7 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 			case response <- re:
 			default:
 			}
-			break
+			break LOOP
 		case <-ticker.C:
 			continue
 		}
