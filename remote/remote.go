@@ -28,15 +28,11 @@ func New() *Remote {
 }
 
 //Lookup 从远程服务器查询解析信息
-func (r *Remote) Lookup(net string, req *dns.Msg) (message *dns.Msg, err error) {
+func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 	//查询名称服务器，并处理结果
 	c := &dns.Client{
-		Net:          net,
 		ReadTimeout:  time.Second * 30,
 		WriteTimeout: time.Second * 30,
-	}
-	if net == "udp" {
-		req = req.SetEdns0(65535, true)
 	}
 	logger := logger.New("ctx")
 	qname := req.Question[0].Name

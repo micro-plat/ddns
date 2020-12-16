@@ -32,6 +32,9 @@ func NewRequest(proto string, w dns.ResponseWriter, req *dns.Msg) (r *Request) {
 	} else {
 		r.header["Client-IP"] = w.RemoteAddr().(*net.TCPAddr).IP.String()
 	}
+	if proto == "udp" {
+		req = req.SetEdns0(65535, true)
+	}
 	r.form["request"] = req
 	r.form["writer"] = w
 	return r

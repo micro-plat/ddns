@@ -49,10 +49,10 @@ func (p *Processor) execute() middleware.Handler {
 	return func(ctx middleware.IMiddleContext) {
 
 		//处理响应
-		r, _ := ctx.Request().GetMap().Get("req")
+		r, _ := ctx.Request().GetMap().Get("request")
 		req := r.(*dns.Msg)
 
-		w, _ := ctx.Request().GetMap().Get("w")
+		w, _ := ctx.Request().GetMap().Get("writer")
 		writer := w.(dns.ResponseWriter)
 
 		//解析域名
