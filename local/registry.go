@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"net"
 	"strings"
 
@@ -66,7 +67,7 @@ func (r *Registry) loopWatch() {
 
 //Lookup 查询域名解析结果
 func (r *Registry) Lookup(req *dns.Msg) ([]net.IP, bool) {
-	v, ok := r.domains.Get(req.Question[0].Name)
+	v, ok := r.domains.Get(strings.Trim(req.Question[0].Name, "."))
 	if !ok {
 		return nil, false
 	}
@@ -76,7 +77,6 @@ func (r *Registry) Lookup(req *dns.Msg) ([]net.IP, bool) {
 
 //Load 加载所有域名的IP信息
 func (r *Registry) load() error {
-
 	//拉取所有域名
 	cdomains, err := r.getAllDomains()
 	if err != nil {
@@ -147,6 +147,7 @@ func (r *Registry) getAllDomains() (map[string]bool, error) {
 }
 
 func (r *Registry) loadIP(domain string) error {
+
 	path := registry.Join(r.root, domain)
 	ips, _, err := r.r.GetChildren(path)
 	if err != nil {
@@ -155,8 +156,9 @@ func (r *Registry) loadIP(domain string) error {
 	nips := unpack(ips)
 	switch {
 	case len(nips) == 0:
-		r.domains.Clear()
+		r.domains.Remove(domain)
 	default:
+		fmt.Println("loadIP.Set", domain, nips)
 		r.domains.Set(domain, nips)
 	}
 	return nil
