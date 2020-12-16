@@ -33,5 +33,5 @@ func (c *Cache) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 
 //Set 保存到缓存
 func (c *Cache) Set(msg *dns.Msg) {
-	c.cache.Set(msg.Question[0].Name, msg, time.Second*60)
+	c.cache.Set(msg.Question[0].Name, msg, time.Minute)
 }
