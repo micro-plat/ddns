@@ -66,6 +66,7 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 			case response <- re:
 			default:
 			}
+			break
 		case <-ticker.C:
 			continue
 		}
