@@ -26,20 +26,24 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 		ReadTimeout:  time.Second * 30,
 		WriteTimeout: time.Second * 30,
 	}
-	qname := req.Question[0].Name
-	names := r.names.Lookup()
-	response := make(chan *dns.Msg, len(names))
-	errChan := make(chan error, len(names))
+
+	response := make(chan *dns.Msg, 1)
+	errChan := make(chan error, 1)
 	lookup := func(nameserver string) {
 		res, _, err1 := c.Exchange(req, nameserver)
-		fmt.Println("result:", res, err1)
 		if err1 != nil {
-			errChan <- fmt.Errorf("%v,%v", err, err1)
+			select {
+			case errChan <- err1:
+			default:
+			}
 			return
 		}
 		if res != nil {
 			if res.Rcode == dns.RcodeServerFailure {
-				errChan <- fmt.Errorf("请求失败")
+				select {
+				case errChan <- fmt.Errorf("请求失败"):
+				default:
+				}
 				return
 			}
 		}
@@ -47,18 +51,21 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 		case response <- res:
 		default:
 		}
+
 	}
 
 	//循环所有名称服务器，每个服务器等待500毫秒，未拿到解析结果则发起下一个名称解析
 	ticker := time.NewTicker(time.Millisecond * 500)
 	defer ticker.Stop()
-
-	respChan := make(chan *dns.Msg, len(names))
+	names := r.names.Lookup()
 	for _, host := range names {
 		go lookup(host)
 		select {
 		case re := <-response:
-			respChan <- re
+			select {
+			case response <- re:
+			default:
+			}
 		case <-ticker.C: //1秒没返回则同步查询
 			continue
 		}
@@ -66,13 +73,14 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 
 	//处理返回结果
 	select {
-	case re := <-respChan:
+	case re := <-response:
 		return re, nil
-	case <-time.After(time.Second * 10):
+	case <-time.After(time.Second * 30):
 		select {
 		case err := <-errChan:
 			return nil, err
 		default:
+			qname := req.Question[0].Name
 			return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
 		}
 	}

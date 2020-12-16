@@ -53,7 +53,7 @@ func (f *Names) Start() (err error) {
 
 //Lookup 查询域名解析结果
 func (f *Names) Lookup() []string {
-	return []string{"8.8.8.8:53"}
+	return []string{"8.8.8.8:53", "114.114.114.114:53"}
 	// f.lk.RLock()
 	// defer f.lk.RUnlock()
 	// return f.names
