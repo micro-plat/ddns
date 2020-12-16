@@ -86,5 +86,7 @@ func (l *Local) Save2Cache(msg *dns.Msg) {
 
 //Close 关闭服务
 func (l *Local) Close() {
-	l.r.Close()
+	if l.r != nil {
+		l.r.Close()
+	}
 }

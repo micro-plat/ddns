@@ -106,6 +106,11 @@ LOOP:
 		}
 	}
 }
+
+//Close 关闭服务
 func (r *Remote) Close() {
-	r.names.Close()
+	if r.names != nil {
+		r.names.Close()
+	}
+
 }
