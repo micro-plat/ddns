@@ -5,13 +5,8 @@ import (
 	"net"
 	"sync"
 
-<<<<<<< HEAD:names/names.go
 	"github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/pkgs"
-=======
-	"github.com/micro-plat/ddns/dns/conf"
-	"github.com/micro-plat/ddns/dns/pkgs"
->>>>>>> dev1.2-ljy:dns/names.go
 	"github.com/micro-plat/hydra/conf/app"
 
 	"github.com/micro-plat/lib4go/logger"
@@ -35,11 +30,7 @@ func NewNames() *Names {
 	names := &Names{
 		closeCh:       make(chan struct{}),
 		namesCh:       make(chan []string),
-<<<<<<< HEAD:names/names.go
 		log:           logger.New("names"),
-=======
-		log:           log,
->>>>>>> dev1.2-ljy:dns/names.go
 		localnames:    make([]string, 0),
 		registrynames: make([]string, 0),
 	}
@@ -144,12 +135,8 @@ func (f *Names) sortByTTL(names []string) []string {
 
 //loadRgt 加载注册中心配置dbs列表信息
 func (f *Names) loadRgt() ([]string, error) {
-<<<<<<< HEAD:names/names.go
 	//@todo: 此处引用 dns.DDNS 会循环引用
 	ddnsConf, err := app.Cache.GetAPPConf("ddns")
-=======
-	ddnsConf, err := app.Cache.GetAPPConf(DDNS)
->>>>>>> dev1.2-ljy:dns/names.go
 	if err != nil {
 		return nil, fmt.Errorf("加载注册中心dns配置信息失败:%w", err)
 	}
@@ -160,11 +147,7 @@ func (f *Names) loadRgt() ([]string, error) {
 		return nil, fmt.Errorf("获取[%s]注册中心dns配置信息失败:%w", conf.TypeNodeName, err)
 	}
 	names := []string{}
-<<<<<<< HEAD:names/names.go
 	for _, str := range dnslist.IPS {
-=======
-	for _, str := range dnslist.Dnss {
->>>>>>> dev1.2-ljy:dns/names.go
 		ip := net.ParseIP(str)
 		if ip == nil {
 			continue //ip格式错误
@@ -173,29 +156,3 @@ func (f *Names) loadRgt() ([]string, error) {
 	}
 	return names, nil
 }
-<<<<<<< HEAD:names/names.go
-=======
-
-/*
-func (f *Names) checkAndCreateConf() error {
-	_, err := os.Stat(pkgs.NAME_FILE)
-	if err == nil {
-		return nil
-	}
-	if !os.IsNotExist(err) {
-		return err
-	}
-	fwriter, err := file.CreateFile(pkgs.NAME_FILE)
-	if err != nil {
-		return fmt.Errorf("创建文件:%s失败 %w", pkgs.NAME_FILE, err)
-	}
-
-	defer fwriter.Close()
-	_, err = fwriter.Write([]byte(strings.Join(defNames, "\n")))
-	if err != nil {
-		return fmt.Errorf("写入文件:%s失败:%s", defNames, err)
-	}
-	return nil
-}
-*/
->>>>>>> dev1.2-ljy:dns/names.go

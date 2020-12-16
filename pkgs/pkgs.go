@@ -1,13 +1,8 @@
 package pkgs
 
 import (
-<<<<<<< HEAD:pkgs/pkgs.go
 	"strings"
 )
-=======
- 	"strings"
- )
->>>>>>> dev1.2-ljy:dns/pkgs/pkgs.go
 
 func GetSyncData(syncChan chan string) (files []string) {
 	for {
