@@ -47,7 +47,6 @@ func (f *Hosts) Start() (err error) {
 	if err != nil {
 		return err
 	}
-	f.log.Infof("[启用 HOSTS,%d条]", f.len())
 	go f.loopWatch()
 	return nil
 }
@@ -58,19 +57,10 @@ func (f *Hosts) Lookup(req *dns.Msg) ([]net.IP, bool) {
 	defer f.lk.RUnlock()
 	for _, domain := range f.domain {
 		if ips, ok := domain[req.Question[0].Name]; ok {
-			return ips, true
+			return ips, len(ips) > 0
 		}
 	}
 	return nil, false
-}
-func (f *Hosts) len() int {
-	f.lk.RLock()
-	defer f.lk.RUnlock()
-	count := 0
-	for _, domain := range f.domain {
-		count += len(domain)
-	}
-	return count
 }
 
 //Close 关闭服务
@@ -199,7 +189,6 @@ func (f *Hosts) watchNewFile() {
 			}
 			for i := range files {
 				if _, ok := f.domain[files[i]]; !ok {
-					fmt.Println("watchNewFile:", files[i])
 					err = f.reloadOne(files[i])
 					if err != nil {
 						f.log.Errorf("reloadOne:%s;%w", files[i], err)
@@ -218,7 +207,6 @@ func (f *Hosts) watchChange() {
 		case <-f.closeCh:
 			return
 		case event := <-f.watcher.Events:
-			fmt.Println("x:", event.Name, event.Op)
 
 			if strings.HasSuffix(event.Name, ".swp") ||
 				strings.HasSuffix(event.Name, ".swx") ||
@@ -226,7 +214,6 @@ func (f *Hosts) watchChange() {
 				strings.HasPrefix(event.Name, "~") ||
 				strings.HasSuffix(event.Name, "~") ||
 				!strings.HasPrefix(filepath.Base(event.Name), "hosts") {
-				fmt.Println("change continue")
 				continue
 			}
 			switch event.Op {
@@ -247,7 +234,7 @@ func (f *Hosts) syncFileChange() {
 			ticker.Stop()
 			files := pkgs.GetSyncData(f.syncChan)
 			if len(files) > 0 {
-				files = pkgs.RemoveRepeat(files)
+				files = pkgs.Distinct(files)
 			}
 
 			for i := range files {

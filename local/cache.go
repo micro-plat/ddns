@@ -26,12 +26,13 @@ func (c *Cache) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 		m := dns.Msg{}
 		m = *msg
 		m.Id = req.Id
-		return &m, true
+		m.Answer = msg.Answer
+		return &m, len(msg.Answer) > 0
 	}
 	return nil, false
 }
 
 //Set 保存到缓存
 func (c *Cache) Set(msg *dns.Msg) {
-	c.cache.Set(msg.Question[0].Name, msg, time.Second*60)
+	c.cache.Set(msg.Question[0].Name, msg, time.Minute)
 }
