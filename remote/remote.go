@@ -39,7 +39,7 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 	lookup := func(nameserver string) {
 		wait.Add(1)
 		defer wait.Done()
-		res, _, err1 := c.Exchange(req, nameserver)
+		res, rtt, err1 := c.Exchange(req, nameserver)
 		if err1 != nil {
 			select {
 			case errChan <- err1:
@@ -47,6 +47,9 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 			}
 			return
 		}
+
+		//异步更新rtt
+		go r.names.UpdateRTT(nameserver, rtt)
 		if res != nil {
 			if res.Rcode == dns.RcodeServerFailure {
 				select {
