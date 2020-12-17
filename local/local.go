@@ -40,6 +40,9 @@ func New() (*Local, error) {
 	if err := l.r.Start(); err != nil {
 		return nil, err
 	}
+	if err := l.h.Start(); err != nil {
+		return nil, err
+	}
 	return l, nil
 }
 
