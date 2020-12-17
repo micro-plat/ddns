@@ -21,6 +21,7 @@ type Resolver struct {
 }
 
 func New() (*Resolver, error) {
+
 	l, err := local.New()
 	if err != nil {
 		return nil, err
@@ -39,12 +40,12 @@ func New() (*Resolver, error) {
 
 //Lookup 循环所有名称服务器，以最快速度拿取解析信息，所有名称服务器都未能成功,再次从缓存中获取
 func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache bool, err error) {
-
 	//查询本地缓存
 	cmsg, ok := r.local.Lookup(req)
 	if ok {
 		return cmsg, true, nil
 	}
+
 	//查询远程服务
 	rmsg, err := r.remote.Lookup(req)
 	if err != nil {
@@ -56,6 +57,7 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 		r.local.Save2Cache(rmsg)
 		return rmsg, false, nil
 	}
+
 	//再次从缓存中拉取，解决并发请求时部分请求未能从名称服务器中获取到结果的问题
 	cmsg, ok = r.local.Lookup(req)
 	if ok {
