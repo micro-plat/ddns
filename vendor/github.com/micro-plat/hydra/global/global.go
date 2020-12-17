@@ -32,8 +32,14 @@ type global struct {
 	//PlatName 平台名称
 	PlatName string
 
+	//PlatCNName 平台中文名称
+	PlatCNName string
+
 	//SysName 系统名称
 	SysName string
+
+	//SysName 系统中文名称
+	SysCNName string
 
 	//ServerTypes 服务器类型
 	ServerTypes []string

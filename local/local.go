@@ -48,7 +48,6 @@ func New() (*Local, error) {
 
 //Lookup 根据域名查询
 func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
-
 	//从本地缓存获取
 	domain := TrimDomain(req.Question[0].Name)
 	if msg, ok := l.c.Lookup(domain, req); ok {
@@ -61,6 +60,7 @@ func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
 	if !ok || len(ips) == 0 {
 		return nil, false
 	}
+
 	return pack(ips, req), true
 }
 

@@ -1,6 +1,8 @@
 package dns
 
 import (
+	"sync"
+
 	"github.com/micro-plat/ddns/resolver"
 	"github.com/micro-plat/hydra/hydra/servers/pkg/dispatcher"
 	"github.com/micro-plat/hydra/hydra/servers/pkg/middleware"
@@ -11,6 +13,7 @@ import (
 type Processor struct {
 	*dispatcher.Engine
 	resolver *resolver.Resolver
+	once     sync.Once
 }
 
 //NewProcessor 创建processor
@@ -76,8 +79,9 @@ func (p *Processor) execute() middleware.Handler {
 
 //Close 关闭上游服务
 func (p *Processor) Close() {
-	if p.resolver != nil {
-		p.resolver.Close()
-	}
-
+	p.once.Do(func() {
+		if p.resolver != nil {
+			p.resolver.Close()
+		}
+	})
 }
