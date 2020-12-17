@@ -35,79 +35,75 @@ func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 	names := r.names.Lookup()
 	response := make(chan *dns.Msg, len(names))
 	errChan := make(chan error, 1)
-	wait := sync.WaitGroup{}
-	lookup := func(nameserver string) {
-		wait.Add(1)
-		defer wait.Done()
-		res, rtt, err1 := c.Exchange(req, nameserver)
-		if err1 != nil {
-			select {
-			case errChan <- err1:
-			default:
-			}
-			return
-		}
+	ctrlChan := make(chan struct{})
 
-		//异步更新rtt
-		go r.names.UpdateRTT(nameserver, rtt)
-		if res != nil {
-			if res.Rcode == dns.RcodeServerFailure {
-				select {
-				case errChan <- fmt.Errorf("请求失败"):
-				default:
-				}
-				return
-			}
-		}
-		response <- res
-	}
+	go r.allLookup(names, ctrlChan, req, response, errChan)
 
-	//循环所有名称服务器，每个服务器等待500毫秒，未拿到解析结果则发起下一个名称解析
-	ticker := time.NewTicker(time.Millisecond * 500)
-	defer ticker.Stop()
-
-LOOP:
-	for _, host := range names {
-		go lookup(host)
+	//处理返回结果
+	select {
+	case re := <-response:
+		close(ctrlChan)
+		return re, nil
+	case <-ctrlChan:
 		select {
 		case re := <-response:
-			select {
-			case response <- re:
-			default:
-			}
-			break LOOP
+			return re, nil
+		case err := <-errChan:
+			return nil, err
+		default:
+			qname := req.Question[0].Name
+			return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
+		}
+	}
+}
+
+func (r *Remote) allLookup(names []string, ctrlChan chan struct{}, req *dns.Msg, response chan *dns.Msg, errChan chan error) {
+	ticker := time.NewTicker(time.Millisecond * 500)
+	defer ticker.Stop()
+	wait := &sync.WaitGroup{}
+	for _, host := range names {
+		go r.singleLookup(wait, host, req, response, errChan)
+		select {
+		case <-ctrlChan:
+			return
 		case <-ticker.C:
 			continue
 		}
 	}
-
-	//处理返回结果
-	timeout := make(chan struct{})
-	go func() {
-		wait.Wait()
-		close(timeout)
-	}()
-	for {
+	wait.Wait()
+	close(ctrlChan)
+}
+func (r *Remote) singleLookup(wait *sync.WaitGroup, nameserver string, req *dns.Msg, response chan *dns.Msg, errChan chan error) {
+	c := &dns.Client{
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+	wait.Add(1)
+	defer wait.Done()
+	res, rtt, err := c.Exchange(req, nameserver)
+	if err != nil {
 		select {
-		case re := <-response:
-			if len(re.Answer) > 0 {
-				return re, nil
-			}
-		case <-timeout:
-			select {
-			case re := <-response:
-				if len(re.Answer) > 0 {
-					return re, nil
-				}
-			case err := <-errChan:
-				return nil, err
-			default:
-				qname := req.Question[0].Name
-				return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
-			}
+		case errChan <- err:
+		default:
+		}
+		return
+	}
 
+	//异步更新rtt
+	go r.names.UpdateRTT(nameserver, rtt)
+	if res != nil {
+		if res.Rcode == dns.RcodeServerFailure {
+			select {
+			case errChan <- fmt.Errorf("请求失败"):
+			default:
+			}
+			return
 		}
 	}
+	if len(res.Answer) > 0 {
+		response <- res
+	}
+	return
 }
 
 //Close 关闭服务
