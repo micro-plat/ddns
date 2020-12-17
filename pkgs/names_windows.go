@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time" 
+	"time"
 
 	"sort"
- 	"github.com/golang/sys/windows/registry"
+
+	"golang.org/x/sys/windows/registry"
 )
 
 const (
@@ -76,7 +77,7 @@ func GetNameServers() (nameserver []string, err error) {
 	}
 	nameserver = Distinct(nameserver)
 	sort.Strings(nameserver)
-	fmt.Println("windows.nameserver:",nameserver)
+	fmt.Println("windows.nameserver:", nameserver)
 
 	return
 }
