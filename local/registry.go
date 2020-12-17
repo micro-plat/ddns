@@ -285,7 +285,7 @@ func (r *Registry) lazyBuild() {
 					r.log.Error(err)
 				}
 			}
-			//1分钟内没有变化，则一直等待
+			//1个周期内没有变化，则一直等待
 			if time.Since(r.lastStart) >= r.onceWait {
 				r.lazyClock.Reset(r.maxWait)
 			}
