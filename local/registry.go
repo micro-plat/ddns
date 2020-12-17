@@ -3,9 +3,13 @@ package local
 import (
 	"net"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/micro-plat/hydra"
+	"github.com/micro-plat/hydra/hydra/servers/http"
 	"github.com/micro-plat/hydra/registry"
+	"github.com/micro-plat/hydra/registry/pub"
 	"github.com/micro-plat/hydra/registry/watcher"
 	"github.com/micro-plat/lib4go/concurrent/cmap"
 	"github.com/micro-plat/lib4go/logger"
@@ -21,6 +25,12 @@ type Registry struct {
 	domainWatcher cmap.ConcurrentMap
 	notify        chan *watcher.ChildChangeArgs
 	domainDetails cmap.ConcurrentMap
+	lock          sync.RWMutex
+	plats         map[string][]*Plat
+	lazyClock     *time.Ticker
+	lastStart     time.Time
+	maxWait       time.Duration
+	onceWait      time.Duration
 	log           logger.ILogger
 	closeCh       chan struct{}
 }
@@ -31,6 +41,11 @@ func newRegistry() *Registry {
 		root:          "/dns",
 		log:           hydra.G.Log(),
 		r:             registry.GetCurrent(),
+		plats:         make(map[string][]*Plat),
+		lazyClock:     time.NewTicker(time.Hour),
+		lastStart:     time.Now(),
+		maxWait:       time.Hour,
+		onceWait:      time.Minute,
 		domainWatcher: cmap.New(6),
 		domains:       cmap.New(6),
 		domainDetails: cmap.New(6),
@@ -50,6 +65,7 @@ func (r *Registry) Start() (err error) {
 		return err
 	}
 	go r.loopWatch()
+	go r.lazyBuild()
 	return nil
 }
 func (r *Registry) loopWatch() {
@@ -77,8 +93,10 @@ func (r *Registry) Lookup(domain string) ([]net.IP, bool) {
 }
 
 //GetDomainDetails 获取域名详情信息，返回格式为map[string]interface{}{"ddns.com",[]byte("{....}")}
-func (r *Registry) GetDomainDetails() map[string]interface{} {
-	return r.domainDetails.Items()
+func (r *Registry) GetDomainDetails() map[string][]*Plat {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	return r.plats
 }
 
 //CreateOrUpdate 创建或设置域名的IP信息
@@ -205,6 +223,10 @@ func (r *Registry) loadDetail(domain string) error {
 	}
 	//保存到域名列表
 	r.domainDetails.Set(domain, list)
+
+	//通过延迟加载的方式更新平台分组数据
+	r.lastStart = time.Now()      //时钟重置
+	r.lazyClock.Reset(r.onceWait) //时间置为等待一个周期
 	return nil
 }
 
@@ -247,4 +269,110 @@ func (r *Registry) Update(domain string, ips ...string) error {
 		}
 	}
 	return nil
+}
+func (r *Registry) lazyBuild() {
+	for {
+		select {
+		case <-r.closeCh:
+			return
+		case <-r.lazyClock.C:
+
+			//重新构建平台分组数据
+			col := make(platCollection, 3)
+			items := r.domainDetails.Items()
+			for k, v := range items {
+				if err := col.append(k, v.([]byte)); err != nil {
+					r.log.Error(err)
+					return
+				}
+			}
+			//1分钟内没有变化，则一直等待
+			if time.Since(r.lastStart) >= r.onceWait {
+				r.lazyClock.Reset(r.maxWait)
+			}
+			r.lock.Lock()
+			defer r.lock.Unlock()
+			r.plats = col
+
+		}
+	}
+
+}
+
+type Plat struct {
+	PlatName   string             `json:"plat_name"`
+	PlatCNName string             `json:"plat_cn_name"`
+	Clusters   map[string]*System `json:"clusters"`
+}
+type System struct {
+	SystemName     string `json:"system_name"`
+	SystemCNName   string `json:"system_cn_name"`
+	ServerType     string `json:"server_type"`
+	ServerName     string `json:"server_name"`
+	ServiceAddress string `json:"service_address"`
+	IPAddress      string `json:"ip"`
+	URL            string `json:"url"`
+}
+
+func toPlat(r *pub.DNSConf, domain string) *Plat {
+	_, port, _ := net.SplitHostPort(r.ServiceAddress)
+	p := &Plat{}
+	p.PlatName = r.PlatName
+	p.PlatCNName = r.PlatCNName
+	p.Clusters = map[string]*System{
+		r.ClusterName: &System{
+			SystemName:     r.SystemName,
+			SystemCNName:   r.SystemCNName,
+			ServerType:     r.ServerType,
+			ServerName:     r.ServerName,
+			ServiceAddress: r.ServiceAddress,
+			IPAddress:      r.IPAddress,
+			URL:            net.JoinHostPort(domain, port),
+		},
+	}
+	return p
+}
+
+//Append 将域名信息添加到列表
+var defTag = "-"
+
+type platCollection map[string][]*Plat
+
+func (r platCollection) append(domain string, buff []byte) error {
+	//外部注册域名
+	if len(buff) == 0 || types.BytesToString(buff) == "{}" {
+		v, ok := r[defTag]
+		if !ok {
+			v = make([]*Plat, 0, 1)
+			r[defTag] = v
+		}
+		v = append(v, &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
+		return nil
+	}
+	//转换服务对应的详情信息
+	raw, err := pub.GetDNSConf(buff)
+	if err != nil {
+		return err
+	}
+	if raw.ServerType != http.API && raw.ServerType != http.Web {
+		return nil
+	}
+	plat := toPlat(raw, domain)
+	plats, ok := r[raw.ServerType]
+	if !ok {
+		r[raw.ServerType] = []*Plat{plat}
+		return nil
+	}
+
+	//平台存时，将当前信息添加到指定集群
+	for _, v := range plats {
+		if v.PlatName == plat.PlatName {
+			v.Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
+			return nil
+		}
+	}
+	//没有同名的平台，直接追加
+	plats = append(plats, plat)
+	return nil
+
 }
