@@ -131,9 +131,9 @@ func (r *Registry) load() error {
 			wc := w.(watcher.IChildWatcher)
 			wc.Close()
 		}
+		r.domainDetails.Remove(k)
 		//从缓存列表移除
 		return true
-
 	})
 
 	//添加不存在的域名
@@ -237,7 +237,7 @@ func (r *Registry) loadDetail(domain string) error {
 func unpack(lst []string) []net.IP {
 	ips := make([]net.IP, 0, 1)
 	for _, v := range lst {
-		args := strings.SplitN(v, "_", 2)
+		args := strings.SplitN(v, ":", 2)
 		if ip := net.ParseIP(args[0]); ip != nil {
 			ips = append(ips, ip)
 		}
@@ -284,9 +284,11 @@ func (r *Registry) lazyBuild() {
 			col := make(platCollection, 3)
 			items := r.domainDetails.Items()
 			for k, v := range items {
-				if err := col.append(k, v.([]byte)); err != nil {
-					r.log.Error(err)
-				}
+				for _,it := range v.([][]byte){
+					if err := col.append(k, it); err != nil {
+						r.log.Error(err)
+					}
+				}				
 			}
 			//1个周期内没有变化，则一直等待
 			if time.Since(r.lastStart) >= r.onceWait {
