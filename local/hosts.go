@@ -46,30 +46,20 @@ func (f *Hosts) Start() (err error) {
 	if err != nil {
 		return err
 	}
-	f.log.Infof("[启用 HOSTS,%d条]", f.len())
 	go f.loopWatch()
 	return nil
 }
 
 //Lookup 查询域名解析结果
-func (f *Hosts) Lookup(name string) []net.IP {
+func (f *Hosts) Lookup(domain string) ([]net.IP, bool) {
 	f.lk.RLock()
 	defer f.lk.RUnlock()
-	for _, domain := range f.domain {
-		if ips, ok := domain[name]; ok {
-			return ips
+	for _, d := range f.domain {
+		if ips, ok := d[domain]; ok {
+			return ips, len(ips) > 0
 		}
 	}
-	return nil
-}
-func (f *Hosts) len() int {
-	f.lk.RLock()
-	defer f.lk.RUnlock()
-	count := 0
-	for _, domain := range f.domain {
-		count += len(domain)
-	}
-	return count
+	return nil, false
 }
 
 //Close 关闭服务
@@ -162,7 +152,7 @@ func (f *Hosts) load(path string) (map[string][]net.IP, error) {
 		}
 
 		for i := 1; i <= len(sli)-1; i++ {
-			domain := strings.ToLower(strings.TrimSpace(sli[i]))
+			domain := TrimDomain(strings.ToLower(strings.TrimSpace(sli[i])))
 			if domain == "" {
 				continue
 			}

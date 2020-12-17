@@ -20,7 +20,7 @@ func NewNames(ips ...string) *Names {
 	if len(ips) > 0 {
 		return &Names{IPS: ips}
 	}
-	return &Names{IPS: []string{"114.114.114.114", "8.8.8.8"}}
+	return &Names{}
 }
 
 //GetNamesConf .
@@ -28,7 +28,7 @@ func GetNamesConf(cnf conf.IServerConf) (names *Names, err error) {
 	names = &Names{IPS: []string{}}
 	_, err = cnf.GetSubObject(TypeNodeName, names)
 	if err == conf.ErrNoSetting {
-		return &Names{IPS: []string{"114.114.114.114", "8.8.8.8"}}, nil
+		return &Names{}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("ddns配置错误:%v", err)

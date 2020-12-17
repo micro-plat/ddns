@@ -8,7 +8,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/lib4go/net"
-	"github.com/micro-plat/lib4go/types"
 )
 
 const (
@@ -27,19 +26,16 @@ var SubConfName = []string{TypeNodeName}
 //Server api server配置信息
 type Server struct {
 	Status   string `json:"status,omitempty" valid:"in(start|stop)" toml:"status,omitempty"`
-	Host     string `json:"host,omitempty"  toml:"host,omitempty"`
-	Port     string `json:"port,omitempty"  toml:"port,omitempty"`
 	RTimeout int    `json:"rTimeout,omitempty" toml:"rTimeout,omitzero"` //单位秒
 	WTimeout int    `json:"wTimeout,omitempty" toml:"wTimeout,omitzero"` //单位秒
 	UDPSize  int    `json:"udpSize,omitempty" toml:"udpSize,omitzero"`   //udp协议传输mesgges大小 单位字节
+	Trace    bool   `json:"trace,omitempty" toml:"trace,omitempty"`
 }
 
 //New 构建websocket server配置信息
 func New(opts ...Option) *Server {
 	a := &Server{
 		Status:   StartStatus,
-		Host:     net.GetLocalIPAddress(),
-		Port:     "53",
 		RTimeout: 5,
 		WTimeout: 5,
 		UDPSize:  65535,
@@ -52,10 +48,7 @@ func New(opts ...Option) *Server {
 
 //GetAddress 获取dns服务地址端口
 func (s *Server) GetAddress() string {
-	if types.IsEmpty(s.Host) || types.IsEmpty(s.Port) {
-		return xnet.JoinHostPort(net.GetLocalIPAddress(), "53")
-	}
-	return xnet.JoinHostPort(s.Host, s.Port)
+	return xnet.JoinHostPort(net.GetLocalIPAddress(), "53")
 }
 
 //GetRTimeout 获取读取超时时间

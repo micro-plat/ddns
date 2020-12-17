@@ -6,87 +6,114 @@ import (
 	"time"
 
 	"github.com/micro-plat/ddns/names"
-	"github.com/micro-plat/lib4go/logger"
 	"github.com/miekg/dns"
 )
-
-var defRemote = New()
-
-func Lookup(req *dns.Msg) (message *dns.Msg, b bool) {
-	message, err := defRemote.Lookup(req)
-	if err != nil {
-		return nil, false
-	}
-	return message, true
-}
 
 type Remote struct {
 	names *names.Names
 }
 
 //New 构建远程解析器
-func New() *Remote {
-	rmt := &Remote{
-		names: names.NewNames(),
-	}
-	err := rmt.names.Start()
+func New() (*Remote, error) {
+	names, err := names.New()
 	if err != nil {
-		panic(fmt.Errorf("remote.New: %w", err))
+		return nil, err
 	}
-	return rmt
+	rmt := &Remote{
+		names: names,
+	}
+	return rmt, nil
 }
 
 //Lookup 从远程服务器查询解析信息
 func (r *Remote) Lookup(req *dns.Msg) (message *dns.Msg, err error) {
 	//查询名称服务器，并处理结果
 	c := &dns.Client{
-		ReadTimeout:  time.Second * 30,
-		WriteTimeout: time.Second * 30,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
 	}
-	logger := logger.New("ctx")
-	qname := req.Question[0].Name
-	response := make(chan *dns.Msg, 1)
-	var wg sync.WaitGroup
+	names := r.names.Lookup()
+	response := make(chan *dns.Msg, len(names))
+	errChan := make(chan error, 1)
+	wait := sync.WaitGroup{}
 	lookup := func(nameserver string) {
-		defer wg.Done()
-		res, _, err1 := c.Exchange(req, nameserver)
+		wait.Add(1)
+		defer wait.Done()
+		res, rtt, err1 := c.Exchange(req, nameserver)
 		if err1 != nil {
-			err = fmt.Errorf("%v,%v", err, err1)
+			select {
+			case errChan <- err1:
+			default:
+			}
 			return
 		}
+
+		//异步更新rtt
+		go r.names.UpdateRTT(nameserver, rtt)
 		if res != nil {
 			if res.Rcode == dns.RcodeServerFailure {
+				select {
+				case errChan <- fmt.Errorf("请求失败"):
+				default:
+				}
 				return
 			}
 		}
-		select {
-		case response <- res:
-		default:
-		}
+		response <- res
 	}
 
 	//循环所有名称服务器，每个服务器等待500毫秒，未拿到解析结果则发起下一个名称解析
 	ticker := time.NewTicker(time.Millisecond * 500)
 	defer ticker.Stop()
-	names := r.names.Lookup()
+
+LOOP:
 	for _, host := range names {
-		wg.Add(1)
 		go lookup(host)
 		select {
 		case re := <-response:
-			return re, nil
-		case <-ticker.C: //1秒没返回则同步查询
+			select {
+			case response <- re:
+			default:
+			}
+			break LOOP
+		case <-ticker.C:
 			continue
 		}
 	}
-	wg.Wait()
 
 	//处理返回结果
-	select {
-	case re := <-response:
-		return re, nil
-	default:
-		logger.Debugf("无法解析的域名:%s[%v](%v)", qname, names, err)
-		return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
+	timeout := make(chan struct{})
+	go func() {
+		wait.Wait()
+		close(timeout)
+	}()
+	for {
+		select {
+		case re := <-response:
+			if len(re.Answer) > 0 {
+				return re, nil
+			}
+		case <-timeout:
+			select {
+			case re := <-response:
+				if len(re.Answer) > 0 {
+					return re, nil
+				}
+			case err := <-errChan:
+				return nil, err
+			default:
+				qname := req.Question[0].Name
+				return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
+			}
+
+		}
 	}
+}
+
+//Close 关闭服务
+func (r *Remote) Close() {
+	if r.names != nil {
+		r.names.Close()
+	}
+
 }
