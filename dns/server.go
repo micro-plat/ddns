@@ -26,7 +26,7 @@ var App = hydra.NewApp(
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"),
-	// hydra.WithRegistry("zk://192.168.0.101"),
+	hydra.WithRegistry("zk://192.168.0.101"),
 )
 
 func init() {

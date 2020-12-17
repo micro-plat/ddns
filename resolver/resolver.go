@@ -40,35 +40,29 @@ func New() (*Resolver, error) {
 
 //Lookup 循环所有名称服务器，以最快速度拿取解析信息，所有名称服务器都未能成功,再次从缓存中获取
 func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache bool, err error) {
-
-	fmt.Println("111111111111")
 	//查询本地缓存
 	cmsg, ok := r.local.Lookup(req)
 	if ok {
 		return cmsg, true, nil
 	}
 
-	fmt.Println("222222222222222")
 	//查询远程服务
 	rmsg, err := r.remote.Lookup(req)
 	if err != nil {
 		return nil, false, fmt.Errorf("未获取到解析结果:%w", err)
 	}
 
-	fmt.Println("333333333333333")
 	//数据正确则保存到缓存
 	if len(rmsg.Answer) > 0 {
 		r.local.Save2Cache(rmsg)
 		return rmsg, false, nil
 	}
 
-	fmt.Println("44444444444444")
 	//再次从缓存中拉取，解决并发请求时部分请求未能从名称服务器中获取到结果的问题
 	cmsg, ok = r.local.Lookup(req)
 	if ok {
 		return cmsg, true, nil
 	}
-	fmt.Println("5555555555555")
 	return nil, true, fmt.Errorf("未获取到解析结果")
 }
 
