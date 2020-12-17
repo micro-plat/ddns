@@ -281,9 +281,13 @@ func (r *Registry) lazyBuild() {
 			col := make(platCollection, 3)
 			items := r.domainDetails.Items()
 			for k, v := range items {
-				if err := col.append(k, v.([]byte)); err != nil {
-					r.log.Error(err)
+				list := v.([][]byte)
+				for _, buff := range list {
+					if err := col.append(k, buff); err != nil {
+						r.log.Error(err)
+					}
 				}
+
 			}
 			//1个周期内没有变化，则一直等待
 			if time.Since(r.lastStart) >= r.onceWait {
