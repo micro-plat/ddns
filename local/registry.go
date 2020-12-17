@@ -291,8 +291,8 @@ func (r *Registry) lazyBuild() {
 				r.lazyClock.Reset(r.maxWait)
 			}
 			r.lock.Lock()
-			defer r.lock.Unlock()
 			r.plats = col
+			r.lock.Unlock()
 
 		}
 	}
