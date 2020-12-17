@@ -38,7 +38,7 @@ type Registry struct {
 //newRegistry 创建注册中心
 func newRegistry() *Registry {
 	r := &Registry{
-		root:          hydra.G.GetDNSRoot(),//  "/dns",
+		root:          hydra.G.GetDNSRoot(), //  "/dns",
 		log:           hydra.G.Log(),
 		r:             registry.GetCurrent(),
 		plats:         make(map[string][]*Plat),
@@ -101,6 +101,7 @@ func (r *Registry) GetDomainDetails() map[string][]*Plat {
 
 //CreateOrUpdate 创建或设置域名的IP信息
 func (r *Registry) CreateOrUpdate(domain string, ip string, value ...string) error {
+	domain = TrimDomain(domain)
 	path := registry.Join(r.root, domain, ip)
 	ok, err := r.r.Exists(path)
 	if err != nil {
@@ -119,7 +120,6 @@ func (r *Registry) load() error {
 	if err != nil {
 		return err
 	}
-
 	//清理已删除的域名
 	r.domains.RemoveIterCb(func(k string, v interface{}) bool {
 		//不处理，直接返回
@@ -182,7 +182,10 @@ func (r *Registry) getAllDomains() (map[string]bool, error) {
 	}
 	m := make(map[string]bool)
 	for _, v := range paths {
-		m[TrimDomain(v)] = true
+		if strings.HasPrefix(v, "www.") {
+			continue
+		}
+		m[v] = true
 	}
 	return m, nil
 }
