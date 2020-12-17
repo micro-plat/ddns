@@ -5,6 +5,7 @@ import (
 	"github.com/micro-plat/ddns/dns"
 	"github.com/micro-plat/ddns/services"
 	"github.com/micro-plat/hydra"
+	"github.com/micro-plat/hydra/conf/server/api"
 	"github.com/micro-plat/hydra/conf/server/cron"
 	"github.com/micro-plat/hydra/conf/server/static"
 )
@@ -17,7 +18,7 @@ func init() {
 	dns.App.Micro("/github/ip/*", services.NewGithubHandler())
 	// dns.App.CRON("/github/ip/*", services.NewGithubHandler(), "@midnight")
 
-	hydra.Conf.API(":8081").Static(static.WithArchive(archive))
+	hydra.Conf.API(":8081", api.WithDNS("www.ddns.com")).Static(static.WithArchive(archive))
 	hydra.Conf.CRON(cron.WithMasterSlave())
 	// hydra.CRON.Add("@now", "/github/ip/request")
 

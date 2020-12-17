@@ -28,7 +28,7 @@ type Registry struct {
 //newRegistry 创建注册中心
 func newRegistry() *Registry {
 	r := &Registry{
-		root:          "/dns",
+		root:          hydra.G.GetDNSRoot(),//  "/dns",
 		log:           hydra.G.Log(),
 		r:             registry.GetCurrent(),
 		domainWatcher: cmap.New(6),
