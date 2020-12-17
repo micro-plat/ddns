@@ -38,17 +38,3 @@ func WithUDPSize(UDPSize int) Option {
 		a.UDPSize = UDPSize
 	}
 }
-
-//WithHost 设置host
-func WithHost(host string) Option {
-	return func(a *Server) {
-		a.Host = host
-	}
-}
-
-//WithPort 设置端口号
-func WithPort(port string) Option {
-	return func(a *Server) {
-		a.Port = port
-	}
-}

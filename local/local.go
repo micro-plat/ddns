@@ -7,6 +7,18 @@ import (
 	"github.com/miekg/dns"
 )
 
+//R 注册中心管理器
+var R *Registry
+
+func init() {
+	hydra.OnReady(func() error {
+		R = newRegistry()
+		return R.Start()
+	})
+
+}
+
+//Local  本地服务
 type Local struct {
 	r *Registry
 	h *Hosts
@@ -21,11 +33,14 @@ type IQuery interface {
 //New 构建本地服务
 func New() (*Local, error) {
 	l := &Local{
-		r: newRegistry(),
+		r: R,
 		h: NewHosts(hydra.G.Log()),
 		c: newCache(),
 	}
 	if err := l.r.Start(); err != nil {
+		return nil, err
+	}
+	if err := l.h.Start(); err != nil {
 		return nil, err
 	}
 	return l, nil

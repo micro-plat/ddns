@@ -9,6 +9,7 @@ import (
 	"github.com/micro-plat/hydra/registry/watcher"
 	"github.com/micro-plat/lib4go/concurrent/cmap"
 	"github.com/micro-plat/lib4go/logger"
+	"github.com/micro-plat/lib4go/types"
 )
 
 //Registry 注册中心
@@ -19,6 +20,7 @@ type Registry struct {
 	rootWatcher   watcher.IChildWatcher
 	domainWatcher cmap.ConcurrentMap
 	notify        chan *watcher.ChildChangeArgs
+	domainDetails cmap.ConcurrentMap
 	log           logger.ILogger
 	closeCh       chan struct{}
 }
@@ -31,6 +33,7 @@ func newRegistry() *Registry {
 		r:             registry.GetCurrent(),
 		domainWatcher: cmap.New(6),
 		domains:       cmap.New(6),
+		domainDetails: cmap.New(6),
 		closeCh:       make(chan struct{}),
 	}
 	return r
@@ -73,6 +76,24 @@ func (r *Registry) Lookup(domain string) ([]net.IP, bool) {
 	return ips, len(ips) > 0
 }
 
+//GetDomainDetails 获取域名详情信息，返回格式为map[string]interface{}{"ddns.com",[]byte("{....}")}
+func (r *Registry) GetDomainDetails() map[string]interface{} {
+	return r.domainDetails.Items()
+}
+
+//CreateOrUpdate 创建或设置域名的IP信息
+func (r *Registry) CreateOrUpdate(domain string, ip string, value ...string) error {
+	path := registry.Join(r.root, domain, ip)
+	ok, err := r.r.Exists(path)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
+	}
+	return r.r.Update(path, types.GetStringByIndex(value, 0, "{}"))
+}
+
 //Load 加载所有域名的IP信息
 func (r *Registry) load() error {
 	//拉取所有域名
@@ -110,14 +131,19 @@ func (r *Registry) load() error {
 			if err != nil {
 				return nil, err
 			}
-			//处理子域名监控
+			//处理域名监控
 			recv := func(domain string, notify chan *watcher.ChildChangeArgs) {
 				for {
 					select {
 					case <-r.closeCh:
 						return
 					case <-notify:
+						//获取所有IP列表
 						if err := r.loadIP(domain); err != nil {
+							r.log.Error(err)
+						}
+						//获取域名下所有IP的详情信息
+						if err := r.loadDetail(domain); err != nil {
 							r.log.Error(err)
 						}
 					}
@@ -159,18 +185,66 @@ func (r *Registry) loadIP(domain string) error {
 	return nil
 }
 
+func (r *Registry) loadDetail(domain string) error {
+
+	//拉取域名下所有IP列表
+	path := registry.Join(r.root, domain)
+	ips, _, err := r.r.GetChildren(path)
+	if err != nil {
+		return err
+	}
+
+	//拉取每个IP对应的值
+	list := make([][]byte, 0, len(ips))
+	for _, ip := range ips {
+		buff, _, err := r.r.GetValue(registry.Join(path, ip))
+		if err != nil {
+			return err
+		}
+		list = append(list, buff)
+	}
+	//保存到域名列表
+	r.domainDetails.Set(domain, list)
+	return nil
+}
+
 //getIPs 转换字符串为ip地址
 func unpack(lst []string) []net.IP {
 	ips := make([]net.IP, 0, 1)
 	for _, v := range lst {
 		args := strings.SplitN(v, "_", 2)
-		ips = append(ips, net.ParseIP(args[0]))
+		if ip := net.ParseIP(args[0]); ip != nil {
+			ips = append(ips, ip)
+		}
 	}
+
 	return ips
 }
 
 //Close 关闭当前服务
 func (r *Registry) Close() error {
 	close(r.closeCh)
+	return nil
+}
+
+//Update 更新域名的ip列表
+func (r *Registry) Update(domain string, ips ...string) error {
+	domainPath := registry.Join(r.root, domain)
+	b, err := r.r.Exists(domainPath)
+	if err != nil {
+		return err
+	}
+	if b {
+		if err := r.r.Delete(domainPath); err != nil {
+			return err
+		}
+	}
+
+	for _, ip := range ips {
+		ippath := registry.Join(domainPath, ip)
+		if err := r.r.CreatePersistentNode(ippath, "{}"); err != nil {
+			return err
+		}
+	}
 	return nil
 }

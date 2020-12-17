@@ -35,9 +35,4 @@ func (c *Cache) Lookup(domain string, req *dns.Msg) (*dns.Msg, bool) {
 //Set 保存到缓存
 func (c *Cache) Set(name string, msg *dns.Msg) {
 	c.cache.Set(name, msg, time.Minute)
-
 }
-
-// func (c *Cache) Items() map[string]cache.Item {
-// 	return c.cache.Items()
-// }
