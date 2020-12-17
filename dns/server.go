@@ -3,6 +3,7 @@ package dns
 import (
 	"fmt"
 	"time"
+	"strings"
 
 	dnsconf "github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/names"
@@ -39,7 +40,8 @@ func init() {
 	App.Cli.Run.OnStarting(func(c global.ICli) error {
 		root := c.String("dnsroot")
 		if root != "" {
-			hydra.G.DNSRoot = root
+			root = strings.Trim(root,"/")
+			hydra.G.DNSRoot = "/" +root
 		}
 		return nil
 	})
