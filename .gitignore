@@ -1,5 +1,5 @@
 
 *ddns
 *.test
-conf/
+# conf/
 logs/
