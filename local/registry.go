@@ -283,7 +283,6 @@ func (r *Registry) lazyBuild() {
 			for k, v := range items {
 				if err := col.append(k, v.([]byte)); err != nil {
 					r.log.Error(err)
-					return
 				}
 			}
 			//1分钟内没有变化，则一直等待
