@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -284,11 +285,12 @@ func (r *Registry) lazyBuild() {
 			col := make(platCollection, 3)
 			items := r.domainDetails.Items()
 			for k, v := range items {
-				for _,it := range v.([][]byte){
+				for _, it := range v.([][]byte) {
+					fmt.Println("ips:", string(it))
 					if err := col.append(k, it); err != nil {
 						r.log.Error(err)
 					}
-				}				
+				}
 			}
 			//1个周期内没有变化，则一直等待
 			if time.Since(r.lastStart) >= r.onceWait {
@@ -345,12 +347,10 @@ type platCollection map[string][]*Plat
 func (r platCollection) append(domain string, buff []byte) error {
 	//外部注册域名
 	if len(buff) == 0 || types.BytesToString(buff) == "{}" {
-		v, ok := r[defTag]
-		if !ok {
-			v = make([]*Plat, 0, 1)
-			r[defTag] = v
+		if _, ok := r[defTag]; !ok {
+			r[defTag] = make([]*Plat, 0, 1)
 		}
-		v = append(v, &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
+		r[defTag] = append(r[defTag], &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
 		return nil
 	}
 	//转换服务对应的详情信息
@@ -369,14 +369,14 @@ func (r platCollection) append(domain string, buff []byte) error {
 	}
 
 	//平台存时，将当前信息添加到指定集群
-	for _, v := range plats {
+	for k, v := range plats {
 		if v.PlatName == plat.PlatName {
-			v.Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
+			r[raw.ServerType][k].Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
 			return nil
 		}
 	}
 	//没有同名的平台，直接追加
-	plats = append(plats, plat)
+	r[raw.ServerType] = append(r[raw.ServerType], plat)
 	return nil
 
 }
