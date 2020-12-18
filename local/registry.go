@@ -1,7 +1,6 @@
 package local
 
 import (
-	"fmt"
 	"net"
 	"strings"
 	"sync"
