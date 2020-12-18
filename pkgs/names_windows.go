@@ -50,7 +50,7 @@ func WatchNameFile(closeCh chan struct{}, nameCh chan []string) {
 }
 
 func GetNameServers() (nameserver []string, err error) {
-	rootkey, err := registry.OpenKey(registry.LOCAL_MACHINE, registrykey, registry.QUERY_VALUE)
+	rootkey, err := registry.OpenKey(registry.LOCAL_MACHINE, registrykey, registry.QUERY_VALUE|registry.ENUMERATE_SUB_KEYS)
 	if err != nil {
 		err = fmt.Errorf(`读取HKEY_LOCAL_MACHINE\%s失败：%w`, registrykey, err)
 		return
