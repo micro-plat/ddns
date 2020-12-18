@@ -2,14 +2,14 @@ package remote
 
 import (
 	"fmt"
+	xnet "net"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/micro-plat/hydra/global"
-
 	"github.com/micro-plat/ddns/names"
+	"github.com/micro-plat/hydra/global"
 	"github.com/miekg/dns"
 )
 
@@ -31,6 +31,25 @@ func New() (*Remote, error) {
 
 //Lookup 从远程服务器查询解析信息
 func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) {
+	//如果被解析的地址就是本地ip  那么就直接返回本机ip作为解析结果
+	if b := r.checkLocalIP(req.Question[0].Name); b {
+		message = &dns.Msg{}
+		message.Id = req.Id
+		message.Question = req.Question
+		header := dns.RR_Header{
+			Name:   req.Question[0].Name,
+			Rrtype: dns.TypeA,
+			Class:  dns.ClassINET,
+			Ttl:    600,
+		}
+		ip := xnet.ParseIP(global.LocalIP())
+		if ip != nil {
+			message.Answer = append(message.Answer, &dns.A{header, ip})
+			return
+		}
+		return
+	}
+
 	//查询名称服务器，并处理结果
 	names := r.names.Lookup()
 	response := make(chan *dns.Msg, len(names))
@@ -42,10 +61,9 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) 
 	defer ticker.Stop()
 
 	wait := &sync.WaitGroup{}
-	localIP := global.LocalIP()
 	allLookup := func() {
 		for _, host := range names {
-			if strings.HasPrefix(host, localIP) {
+			if b := r.checkLocalIP(host); b {
 				continue
 			}
 			//fmt.Println("for:", host, net)
@@ -95,6 +113,14 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) 
 			return nil, fmt.Errorf("无法解析的域名:%s[%v](%v)", qname, names, err)
 		}
 	}
+}
+func (r *Remote) checkLocalIP(host string) bool {
+	localIP := global.LocalIP()
+	if strings.HasPrefix(host, localIP) || strings.HasPrefix(host, "0.0.0.0") || strings.HasPrefix(host, "127.0.0.1") {
+		return true
+	}
+
+	return false
 }
 
 func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg) (res *dns.Msg, err error) {

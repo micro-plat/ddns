@@ -2,8 +2,8 @@ package dns
 
 import (
 	"fmt"
-	"time"
 	"strings"
+	"time"
 
 	dnsconf "github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/names"
@@ -30,7 +30,7 @@ var App = hydra.NewApp(
 	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"),
 	hydra.WithRunFlag("dnsroot", "DNS的跟节点名称"),
-	// hydra.WithRegistry("zk://192.168.0.101"),
+	hydra.WithRegistry("zk://192.168.0.101"),
 )
 
 func init() {
@@ -40,8 +40,8 @@ func init() {
 	App.Cli.Run.OnStarting(func(c global.ICli) error {
 		root := c.String("dnsroot")
 		if root != "" {
-			root = strings.Trim(root,"/")
-			hydra.G.DNSRoot = "/" +root
+			root = strings.Trim(root, "/")
+			hydra.G.DNSRoot = "/" + root
 		}
 		return nil
 	})
