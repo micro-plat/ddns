@@ -5,6 +5,7 @@ import (
 
 	"github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/services"
+	"github.com/micro-plat/ddns/web"
 	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/conf/server/api"
 	"github.com/micro-plat/hydra/conf/server/cron"
@@ -31,8 +32,8 @@ func init() {
 
 	//初始化服务器配置
 	hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(10, 10))).
-		Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8"))
-	hydra.Conf.Web(":80", api.WithDNS("ddns.com")).Static(static.WithArchive(services.Archive))
+		Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
+	hydra.Conf.Web(":80", api.WithDNS("ddns.com")).Static(static.WithArchive(web.Archive))
 	hydra.Conf.API(":8081", api.WithDNS("ddns.com"), api.WithTimeout(300, 300)).
 		Header(header.WithCrossDomain())
 	hydra.Conf.CRON(cron.WithMasterSlave())

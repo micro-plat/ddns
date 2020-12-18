@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/micro-plat/ddns/resolver"
@@ -63,14 +64,16 @@ func (p *Processor) execute() middleware.Handler {
 
 		//解析域名
 		ctx.Log().Info("----------------:", ctx.Request().Headers().GetString("net"))
-		msg, cache, err := p.resolver.Lookup(ctx.Request().Headers().GetString("net"), req)
+		msg, cache, count, err := p.resolver.Lookup(ctx.Request().Headers().GetString("net"), req)
 		if err != nil {
 			ctx.Response().WriteAny(err)
 			return
 		}
+		ctx.Response().AddSpecial(fmt.Sprint(count))
 		if cache {
 			ctx.Response().AddSpecial("C")
 		}
+
 		//处理响应结果
 		msg.SetReply(req)
 		writer.WriteMsg(msg)

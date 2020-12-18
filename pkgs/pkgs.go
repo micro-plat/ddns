@@ -2,6 +2,8 @@ package pkgs
 
 import (
 	"strings"
+
+	"github.com/micro-plat/hydra/global"
 )
 
 func GetSyncData(syncChan chan string) (files []string) {
@@ -27,6 +29,20 @@ func Distinct(arr []string) (newArr []string) {
 	return newArr
 }
 
+//Filte 过滤掉本机IP，0.0.0.0,127.0.0.1
+func Filte(hosts ...string) []string {
+	nhosts := make([]string, 0, len(hosts))
+	localIP := global.LocalIP()
+	for _, host := range hosts {
+		if strings.HasPrefix(host, localIP) ||
+			strings.HasPrefix(host, "0.0.0.0") ||
+			strings.HasPrefix(host, "127.0.0.1") {
+			continue
+		}
+		nhosts = append(nhosts, host)
+	}
+	return nhosts
+}
 func PrepareLine(txt string) string {
 	txt = strings.TrimSpace(txt)
 	txt = strings.Replace(txt, "\t", " ", -1)

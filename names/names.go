@@ -38,7 +38,7 @@ func (l *Names) Lookup() []string {
 	names = append(names, defNames...)
 
 	//服务去重,并排序
-	return l.sorter.Sort(pkgs.Distinct(names)...)
+	return l.sorter.Sort(pkgs.Distinct(pkgs.Filte(names...))...)
 }
 
 //UpdateRTT 更新请求时长
