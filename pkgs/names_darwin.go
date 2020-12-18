@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"sort"
 	"strings"
 )
 
 func WatchNameFile(closeCh chan struct{}, nameCh chan []string) {
-	fw := NewFileWatcher(5)
+	//检查周期
+	tickersec := time.Minute / time.Second
+	fw := NewFileWatcher(int(tickersec))
 	fw.Change = func(string) error {
 		names, err := GetNameServers()
 		if err != nil {

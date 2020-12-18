@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -38,7 +39,7 @@ type Registry struct {
 //newRegistry 创建注册中心
 func newRegistry() *Registry {
 	r := &Registry{
-		root:          "/dns",
+		root:          hydra.G.GetDNSRoot(), //  "/dns",
 		log:           hydra.G.Log(),
 		r:             registry.GetCurrent(),
 		plats:         make(map[string][]*Plat),
@@ -101,6 +102,7 @@ func (r *Registry) GetDomainDetails() map[string][]*Plat {
 
 //CreateOrUpdate 创建或设置域名的IP信息
 func (r *Registry) CreateOrUpdate(domain string, ip string, value ...string) error {
+	domain = TrimDomain(domain)
 	path := registry.Join(r.root, domain, ip)
 	ok, err := r.r.Exists(path)
 	if err != nil {
@@ -119,7 +121,6 @@ func (r *Registry) load() error {
 	if err != nil {
 		return err
 	}
-
 	//清理已删除的域名
 	r.domains.RemoveIterCb(func(k string, v interface{}) bool {
 		//不处理，直接返回
@@ -131,9 +132,9 @@ func (r *Registry) load() error {
 			wc := w.(watcher.IChildWatcher)
 			wc.Close()
 		}
+		r.domainDetails.Remove(k)
 		//从缓存列表移除
 		return true
-
 	})
 
 	//添加不存在的域名
@@ -182,7 +183,10 @@ func (r *Registry) getAllDomains() (map[string]bool, error) {
 	}
 	m := make(map[string]bool)
 	for _, v := range paths {
-		m[TrimDomain(v)] = true
+		if strings.HasPrefix(v, "www.") {
+			continue
+		}
+		m[v] = true
 	}
 	return m, nil
 }
@@ -234,7 +238,7 @@ func (r *Registry) loadDetail(domain string) error {
 func unpack(lst []string) []net.IP {
 	ips := make([]net.IP, 0, 1)
 	for _, v := range lst {
-		args := strings.SplitN(v, "_", 2)
+		args := strings.SplitN(v, ":", 2)
 		if ip := net.ParseIP(args[0]); ip != nil {
 			ips = append(ips, ip)
 		}
@@ -344,12 +348,10 @@ type platCollection map[string][]*Plat
 func (r platCollection) append(domain string, buff []byte) error {
 	//外部注册域名
 	if len(buff) == 0 || types.BytesToString(buff) == "{}" {
-		v, ok := r[defTag]
-		if !ok {
-			v = make([]*Plat, 0, 1)
-			r[defTag] = v
+		if _, ok := r[defTag]; !ok {
+			r[defTag] = make([]*Plat, 0, 1)
 		}
-		v = append(v, &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
+		r[defTag] = append(r[defTag], &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
 		return nil
 	}
 	//转换服务对应的详情信息
@@ -368,14 +370,14 @@ func (r platCollection) append(domain string, buff []byte) error {
 	}
 
 	//平台存时，将当前信息添加到指定集群
-	for _, v := range plats {
+	for k, v := range plats {
 		if v.PlatName == plat.PlatName {
-			v.Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
+			r[raw.ServerType][k].Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
 			return nil
 		}
 	}
 	//没有同名的平台，直接追加
-	plats = append(plats, plat)
+	r[raw.ServerType] = append(r[raw.ServerType], plat)
 	return nil
 
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/micro-plat/hydra/conf"
-	"github.com/micro-plat/lib4go/net"
+	"github.com/micro-plat/hydra/global"
 )
 
 const (
@@ -48,7 +48,7 @@ func New(opts ...Option) *Server {
 
 //GetAddress 获取dns服务地址端口
 func (s *Server) GetAddress() string {
-	return xnet.JoinHostPort(net.GetLocalIPAddress(), "53")
+	return xnet.JoinHostPort(global.LocalIP(), "53")
 }
 
 //GetRTimeout 获取读取超时时间
