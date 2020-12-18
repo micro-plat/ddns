@@ -31,23 +31,9 @@ func New() (*Remote, error) {
 
 //Lookup 从远程服务器查询解析信息
 func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) {
-	//如果被解析的地址就是本地ip  那么就直接返回本机ip作为解析结果
-	localIP := global.LocalIP()
-	if strings.HasPrefix(req.Question[0].Name, localIP) {
-		message = &dns.Msg{}
-		message.Id = req.Id
-		message.Question = req.Question
-		header := dns.RR_Header{
-			Name:   req.Question[0].Name,
-			Rrtype: dns.TypeA,
-			Class:  dns.ClassINET,
-			Ttl:    600,
-		}
-		ip := xnet.ParseIP(localIP)
-		if ip != nil {
-			message.Answer = append(message.Answer, &dns.A{header, ip})
-			return
-		}
+	b, mes := r.checkAnalyHost(req)
+	if b {
+		message = mes
 		return
 	}
 
@@ -64,10 +50,9 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) 
 	wait := &sync.WaitGroup{}
 	allLookup := func() {
 		for _, host := range names {
-			if b := r.checkLocalIP(host); b {
+			if b := r.checkNames(host); b {
 				continue
 			}
-			//fmt.Println("for:", host, net)
 			go func() {
 				wait.Add(1)
 				defer wait.Done()
@@ -85,10 +70,8 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) 
 
 			select {
 			case <-stopChan:
-				//fmt.Println("stopChan")
 				return
 			case <-ticker.C:
-				//fmt.Println("next", host)
 				continue
 			}
 		}
@@ -115,7 +98,32 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) 
 		}
 	}
 }
-func (r *Remote) checkLocalIP(host string) bool {
+
+//如果被解析的地址就是本地ip  那么就直接返回本机ip作为解析结果
+func (r *Remote) checkAnalyHost(req *dns.Msg) (b bool, message *dns.Msg) {
+	b = false
+	localIP := global.LocalIP()
+	if strings.HasPrefix(req.Question[0].Name, localIP) {
+		b = true
+		message = &dns.Msg{}
+		message.Id = req.Id
+		message.Question = req.Question
+		header := dns.RR_Header{
+			Name:   req.Question[0].Name,
+			Rrtype: dns.TypeA,
+			Class:  dns.ClassINET,
+			Ttl:    600,
+		}
+		ip := xnet.ParseIP(localIP)
+		if ip != nil {
+			message.Answer = append(message.Answer, &dns.A{header, ip})
+		}
+		return
+	}
+
+	return
+}
+func (r *Remote) checkNames(host string) bool {
 	localIP := global.LocalIP()
 	if strings.HasPrefix(host, localIP) || strings.HasPrefix(host, "0.0.0.0") || strings.HasPrefix(host, "127.0.0.1") {
 		return true
@@ -125,14 +133,6 @@ func (r *Remote) checkLocalIP(host string) bool {
 }
 
 func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg) (res *dns.Msg, err error) {
-	// start := time.Now()
-	// defer func() {
-	// 	issuc := false
-	// 	if res != nil {
-	// 		issuc = len(res.Answer) > 0
-	// 	}
-	// 	fmt.Println("singleLookup:timerange(ms):", time.Now().Sub(start).Milliseconds(), net, nameserver, req.Question[0].Name, issuc, err)
-	// }()
 	c := &dns.Client{
 		Net:          net,
 		ReadTimeout:  time.Second * 10,
@@ -140,15 +140,12 @@ func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg) (res 
 	}
 	res, rtt, err := c.Exchange(req, nameserver)
 	if err != nil {
-		//fmt.Println("singleLookup-err:", nameserver, net, err, req.Question[0].Name)
 		return nil, err
 	}
 
 	//异步更新rtt
 	go r.names.UpdateRTT(nameserver, rtt)
 	if res != nil {
-		//bytes, _ := json.Marshal(res)
-		//fmt.Println("singleLookup:", nameserver, net, string(bytes))
 		if res.Rcode == dns.RcodeServerFailure {
 			return nil, fmt.Errorf("请求失败")
 		}

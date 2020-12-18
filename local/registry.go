@@ -1,7 +1,6 @@
 package local
 
 import (
-	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -97,9 +96,6 @@ func (r *Registry) Lookup(domain string) ([]net.IP, bool) {
 func (r *Registry) GetDomainDetails() map[string][]*Plat {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	fmt.Println("plat:", len(r.plats))
-	fmt.Println("raw:", r.domainDetails.Count())
-	fmt.Println("domain:", r.domains.Count())
 	return r.plats
 }
 
@@ -124,7 +120,6 @@ func (r *Registry) load() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("all.domains:", cdomains)
 	//清理已删除的域名
 	r.domains.RemoveIterCb(func(k string, v interface{}) bool {
 		//不处理，直接返回
@@ -136,7 +131,6 @@ func (r *Registry) load() error {
 			wc := w.(watcher.IChildWatcher)
 			wc.Close()
 		}
-		fmt.Println("remove:", k)
 		r.domainDetails.Remove(k)
 		//从缓存列表移除
 		return true
@@ -149,7 +143,6 @@ func (r *Registry) load() error {
 			path := registry.Join(r.root, d)
 
 			//获取所有IP列表
-			fmt.Println("------load:", path)
 			if err := r.loadIP(d); err != nil {
 				r.log.Error(err)
 			}
@@ -191,7 +184,6 @@ func (r *Registry) load() error {
 		if err != nil {
 			r.log.Error(err)
 		}
-		fmt.Println("watch:", domain)
 	}
 	return nil
 
@@ -220,10 +212,8 @@ func (r *Registry) loadIP(domain string) error {
 	nips := unpack(ips)
 	switch {
 	case len(nips) == 0:
-		fmt.Println("remove.domain:", domain, ips, nips, r.domains.Count())
 		r.domains.Remove(domain)
 	default:
-		fmt.Println("add.domain:", domain, ips, nips, r.domains.Count())
 		r.domains.Set(domain, nips)
 	}
 	return nil
@@ -244,7 +234,6 @@ func (r *Registry) loadDetail(domain string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("get.detail:", registry.Join(path, ip), string(buff))
 		list = append(list, buff)
 	}
 	//保存到域名列表
@@ -307,9 +296,7 @@ func (r *Registry) lazyBuild() {
 			col := make(platCollection)
 
 			items := r.domainDetails.Items()
-			fmt.Println("lazy.build:", items)
 			for k, v := range items {
-				fmt.Println("lazy.for:", k, v)
 				list := v.([][]byte)
 				for _, buff := range list {
 					if err := col.append(k, buff); err != nil {
@@ -370,7 +357,6 @@ var defTag = "-"
 type platCollection map[string][]*Plat
 
 func (r platCollection) append(domain string, buff []byte) error {
-	fmt.Println("append:", domain, types.BytesToString(buff), len(r))
 	//外部注册域名
 	if len(buff) == 0 || types.BytesToString(buff) == "{}" {
 		if _, ok := r[defTag]; !ok {

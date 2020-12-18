@@ -68,9 +68,6 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 
 //Close 关闭上游服务
 func (r *Resolver) Close() {
-	if r.local != nil {
-		r.local.Close()
-	}
 	if r.remote != nil {
 		r.remote.Close()
 	}
