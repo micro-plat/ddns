@@ -60,7 +60,7 @@ func GetNameServers() (nameserver []string, err error) {
 	}
 	nameserver = Distinct(nameserver)
 	sort.Strings(nameserver)
-
+ 
 	return nameserver, nil
 
 }

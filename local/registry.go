@@ -1,7 +1,6 @@
 package local
 
 import (
-	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -149,6 +148,7 @@ func (r *Registry) load() error {
 			path := registry.Join(r.root, d)
 
 			//获取所有IP列表
+			fmt.Println("------load:", path)
 			if err := r.loadIP(d); err != nil {
 				r.log.Error(err)
 			}
@@ -243,6 +243,7 @@ func (r *Registry) loadDetail(domain string) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println("get.detail:", registry.Join(path, ip), string(buff))
 		list = append(list, buff)
 	}
 	//保存到域名列表
@@ -302,7 +303,7 @@ func (r *Registry) lazyBuild() {
 		case <-r.lazyClock.C:
 
 			//重新构建平台分组数据
-			col := make(platCollection, 3)
+			col := make(platCollection)
 
 			items := r.domainDetails.Items()
 			for k, v := range items {
@@ -367,6 +368,7 @@ var defTag = "-"
 type platCollection map[string][]*Plat
 
 func (r platCollection) append(domain string, buff []byte) error {
+	fmt.Println("append:", domain, types.BytesToString(buff), len(r))
 	//外部注册域名
 	if len(buff) == 0 || types.BytesToString(buff) == "{}" {
 		if _, ok := r[defTag]; !ok {
