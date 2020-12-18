@@ -2,51 +2,19 @@ package dns
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	dnsconf "github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/names"
-	"github.com/micro-plat/hydra"
-	"github.com/micro-plat/hydra/global"
 
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/hydra/conf/server/api"
-	"github.com/micro-plat/hydra/conf/server/header"
 	"github.com/micro-plat/hydra/hydra/servers"
-	"github.com/micro-plat/hydra/hydra/servers/cron"
-	"github.com/micro-plat/hydra/hydra/servers/http"
 	"github.com/micro-plat/hydra/registry/pub"
 	"github.com/micro-plat/lib4go/logger"
 	"github.com/miekg/dns"
 )
-
-//App dns应用程序
-var App = hydra.NewApp(
-	hydra.WithPlatName("ddns"),
-	hydra.WithSystemName("ddnsserver"),
-	hydra.WithUsage("DNS服务"),
-	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
-	hydra.WithClusterName("dns-1.2"),
-	hydra.WithRunFlag("dnsroot", "DNS的跟节点名称"),
-	hydra.WithRegistry("zk://192.168.0.101"),
-)
-
-func init() {
-	hydra.Conf.API(":9090", api.WithTimeout(300, 300)).
-		Header(header.WithCrossDomain())
-
-	App.Cli.Run.OnStarting(func(c global.ICli) error {
-		root := c.String("dnsroot")
-		if root != "" {
-			root = strings.Trim(root, "/")
-			hydra.G.DNSRoot = "/" + root
-		}
-		return nil
-	})
-
-}
 
 //Server DNS服务器
 type Server struct {

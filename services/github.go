@@ -27,9 +27,9 @@ func (u *GithubHandler) CheckHandle(ctx hydra.IContext) (r interface{}) {
 
 //RequestHandle 保存动态域名信息
 func (u *GithubHandler) RequestHandle(ctx hydra.IContext) (r interface{}) {
-	ctx.Log().Info("--------------保存github域名解析信息---------------")
+	ctx.Log().Info("--------------github域名解析---------------")
 
-	ctx.Log().Info("1.获取github域名信息")
+	ctx.Log().Info("1.获取github最快的IP信息")
 	domians, err := GetGithubDomains()
 	if err != nil {
 		return err
