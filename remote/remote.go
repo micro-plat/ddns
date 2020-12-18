@@ -98,14 +98,14 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) 
 }
 
 func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg) (res *dns.Msg, err error) {
-	start := time.Now()
-	defer func() {
-		issuc := false
-		if res != nil {
-			issuc = len(res.Answer) > 0
-		}
-		fmt.Println("singleLookup:timerange(ms):", time.Now().Sub(start).Milliseconds(), net, nameserver, req.Question[0].Name, issuc, err)
-	}()
+	// start := time.Now()
+	// defer func() {
+	// 	issuc := false
+	// 	if res != nil {
+	// 		issuc = len(res.Answer) > 0
+	// 	}
+	// 	fmt.Println("singleLookup:timerange(ms):", time.Now().Sub(start).Milliseconds(), net, nameserver, req.Question[0].Name, issuc, err)
+	// }()
 	c := &dns.Client{
 		Net:          net,
 		ReadTimeout:  time.Second * 10,
