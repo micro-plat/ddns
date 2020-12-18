@@ -18,7 +18,7 @@ func init() {
 	dns.App.Micro("/github/ip/*", services.NewGithubHandler())
 	// dns.App.CRON("/github/ip/*", services.NewGithubHandler(), "@midnight")
 
-	hydra.Conf.API(":8081", api.WithDNS("www.ddns.com")).Static(static.WithArchive(archive))
+	hydra.Conf.API(":8081", api.WithDNS("www.ddns.com")).Static(static.WithArchive(services.Archive))
 	hydra.Conf.CRON(cron.WithMasterSlave())
 	// hydra.CRON.Add("@now", "/github/ip/request")
 

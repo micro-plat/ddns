@@ -1,4 +1,4 @@
-package main
+package services
 
 import (
 	"io/ioutil"
@@ -8,10 +8,10 @@ import (
 	"github.com/micro-plat/ddns/static"
 )
 
-var archive = "./static.zip"
+var Archive = "./static.zip"
 
 func init() {
-	_, err := os.Stat(archive)
+	_, err := os.Stat(Archive)
 	if err == nil {
 		return
 	}

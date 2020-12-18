@@ -305,8 +305,8 @@ func (r *Registry) lazyBuild() {
 			col := make(platCollection, 3)
 
 			items := r.domainDetails.Items()
-			fmt.Println("lazy.build:", items)
 			for k, v := range items {
+				fmt.Println("item:", k)
 				list := v.([][]byte)
 				for _, buff := range list {
 					if err := col.append(k, buff); err != nil {
@@ -355,7 +355,7 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 			ServerName:     r.ServerName,
 			ServiceAddress: r.ServiceAddress,
 			IPAddress:      r.IPAddress,
-			URL:            GetURL(r.Proto, domain, r.Port),
+			URL:            GetURL(r.Proto, r.Prefix, domain, r.Port),
 		},
 	}
 	return p

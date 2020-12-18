@@ -12,11 +12,11 @@ func TrimDomain(d string) string {
 
 }
 func HasWWW(d string) bool {
-	return strings.HasPrefix(d, "wwww.")
+	return strings.HasPrefix(d, "www.")
 }
-func GetURL(proto string, host string, port string) string {
+func GetURL(proto, prefix, host, port string) string {
 	if port == "" {
-		return fmt.Sprintf("%s://%s", proto, host)
+		return fmt.Sprintf("%s://%s%s", proto, prefix, host)
 	}
-	return fmt.Sprintf("%s://%s", proto, net.JoinHostPort(host, port))
+	return fmt.Sprintf("%s://%s%s", proto, prefix, net.JoinHostPort(host, port))
 }
