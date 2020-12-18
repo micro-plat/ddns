@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/micro-plat/ddns/local"
 	"github.com/micro-plat/hydra"
+	"github.com/micro-plat/lib4go/types"
 )
 
 // DdnsHandler Handler
@@ -25,7 +26,7 @@ func (u *DdnsHandler) RequestHandle(ctx hydra.IContext) (r interface{}) {
 	}
 
 	ctx.Log().Info("2. 检查并创建解析信息")
-	if err := local.R.CreateOrUpdate(domain.Domain, domain.IP, domain.Value); err != nil {
+	if err := local.R.CreateOrUpdate(domain.Domain, domain.IP, types.GetString(domain.Value, "{}")); err != nil {
 		return err
 	}
 	return "success"
