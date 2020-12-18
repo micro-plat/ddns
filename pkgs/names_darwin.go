@@ -2,7 +2,6 @@ package pkgs
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"os"
 	"time"
