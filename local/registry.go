@@ -99,6 +99,29 @@ func (r *Registry) GetDomainDetails() map[string][]*Plat {
 	return r.plats
 }
 
+//CreateOrUpdateGithub 创建或设置github域名的IP信息
+func (r *Registry) CreateOrUpdateGithub(domain string, ip string, value ...string) error {
+	domain = TrimDomain(domain)
+	root := registry.Join(r.root, domain)
+	path := registry.Join(r.root, domain, ip)
+	ok, err := r.r.Exists(root)
+	if err != nil {
+		return err
+	}
+	if ok {
+		paths, _, err := r.r.GetChildren(root)
+		if err != nil {
+			return err
+		}
+		for _, pc := range paths {
+			if err := r.r.Delete(registry.Join(root, pc)); err != nil {
+				return err
+			}
+		}
+	}
+	return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
+}
+
 //CreateOrUpdate 创建或设置域名的IP信息
 func (r *Registry) CreateOrUpdate(domain string, ip string, value ...string) error {
 	domain = TrimDomain(domain)
@@ -345,7 +368,7 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 			ServerName:     r.ServerName,
 			ServiceAddress: r.ServiceAddress,
 			IPAddress:      r.IPAddress,
-			URL:            GetURL(r.Proto, domain, r.Port),
+			URL:            GetURL(r.Proto, r.Prefix, domain, r.Port),
 		},
 	}
 	return p
