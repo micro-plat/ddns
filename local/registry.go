@@ -43,10 +43,10 @@ func newRegistry() *Registry {
 		log:           hydra.G.Log(),
 		r:             registry.GetCurrent(),
 		plats:         make(map[string][]*Plat),
-		lazyClock:     time.NewTicker(time.Hour),
+		lazyClock:     time.NewTicker(time.Second * 10),
 		lastStart:     time.Now(),
 		maxWait:       time.Hour,
-		onceWait:      time.Minute,
+		onceWait:      time.Second * 10,
 		domainWatcher: cmap.New(6),
 		domains:       cmap.New(6),
 		domainDetails: cmap.New(6),
@@ -97,6 +97,9 @@ func (r *Registry) Lookup(domain string) ([]net.IP, bool) {
 func (r *Registry) GetDomainDetails() map[string][]*Plat {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
+	fmt.Println("plat:", len(r.plats))
+	fmt.Println("raw:", r.domainDetails.Count())
+	fmt.Println("domain:", r.domains.Count())
 	return r.plats
 }
 
@@ -121,6 +124,7 @@ func (r *Registry) load() error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("all.domains:", cdomains)
 	//清理已删除的域名
 	r.domains.RemoveIterCb(func(k string, v interface{}) bool {
 		//不处理，直接返回
@@ -132,6 +136,7 @@ func (r *Registry) load() error {
 			wc := w.(watcher.IChildWatcher)
 			wc.Close()
 		}
+		fmt.Println("remove:", k)
 		r.domainDetails.Remove(k)
 		//从缓存列表移除
 		return true
@@ -139,9 +144,19 @@ func (r *Registry) load() error {
 
 	//添加不存在的域名
 	for domain := range cdomains {
-		r.domainWatcher.SetIfAbsentCb(domain, func(input ...interface{}) (interface{}, error) {
-			domain := input[0].(string)
-			path := registry.Join(r.root, domain)
+		_, _, err = r.domainWatcher.SetIfAbsentCb(domain, func(input ...interface{}) (interface{}, error) {
+			d := input[0].(string)
+			path := registry.Join(r.root, d)
+
+			//获取所有IP列表
+			if err := r.loadIP(d); err != nil {
+				r.log.Error(err)
+			}
+			//获取域名下所有IP的详情信息
+			if err := r.loadDetail(d); err != nil {
+				r.log.Error(err)
+			}
+
 			w, err := watcher.NewChildWatcherByRegistry(r.r, []string{path}, r.log)
 			if err != nil {
 				return nil, err
@@ -151,27 +166,31 @@ func (r *Registry) load() error {
 				return nil, err
 			}
 			//处理域名监控
-			recv := func(domain string, notify chan *watcher.ChildChangeArgs) {
+			recv := func(d string, notify chan *watcher.ChildChangeArgs) {
 				for {
 					select {
 					case <-r.closeCh:
 						return
 					case <-notify:
 						//获取所有IP列表
-						if err := r.loadIP(domain); err != nil {
+						if err := r.loadIP(d); err != nil {
 							r.log.Error(err)
 						}
 						//获取域名下所有IP的详情信息
-						if err := r.loadDetail(domain); err != nil {
+						if err := r.loadDetail(d); err != nil {
 							r.log.Error(err)
 						}
 					}
 				}
 			}
-			go recv(domain, notify)
+			go recv(d, notify)
 			return notify, nil
 
 		}, domain)
+		if err != nil {
+			r.log.Error(err)
+		}
+		fmt.Println("watch:", domain)
 	}
 	return nil
 
@@ -183,7 +202,7 @@ func (r *Registry) getAllDomains() (map[string]bool, error) {
 	}
 	m := make(map[string]bool)
 	for _, v := range paths {
-		if strings.HasPrefix(v, "www.") {
+		if HasWWW(v) {
 			continue
 		}
 		m[v] = true
@@ -195,20 +214,21 @@ func (r *Registry) loadIP(domain string) error {
 	path := registry.Join(r.root, domain)
 	ips, _, err := r.r.GetChildren(path)
 	if err != nil {
-		return nil
+		return err
 	}
 	nips := unpack(ips)
 	switch {
 	case len(nips) == 0:
+		fmt.Println("remove.domain:", domain, ips, nips, r.domains.Count())
 		r.domains.Remove(domain)
 	default:
+		fmt.Println("add.domain:", domain, ips, nips, r.domains.Count())
 		r.domains.Set(domain, nips)
 	}
 	return nil
 }
 
 func (r *Registry) loadDetail(domain string) error {
-
 	//拉取域名下所有IP列表
 	path := registry.Join(r.root, domain)
 	ips, _, err := r.r.GetChildren(path)
@@ -238,7 +258,7 @@ func (r *Registry) loadDetail(domain string) error {
 func unpack(lst []string) []net.IP {
 	ips := make([]net.IP, 0, 1)
 	for _, v := range lst {
-		args := strings.SplitN(v, ":", 2)
+		args := strings.Split(v, ":")
 		if ip := net.ParseIP(args[0]); ip != nil {
 			ips = append(ips, ip)
 		}
@@ -307,22 +327,21 @@ func (r *Registry) lazyBuild() {
 }
 
 type Plat struct {
-	PlatName   string             `json:"plat_name"`
-	PlatCNName string             `json:"plat_cn_name"`
+	PlatName   string             `json:"plat_name,omitempty"`
+	PlatCNName string             `json:"plat_cn_name,omitempty"`
 	Clusters   map[string]*System `json:"clusters"`
 }
 type System struct {
-	SystemName     string `json:"system_name"`
-	SystemCNName   string `json:"system_cn_name"`
-	ServerType     string `json:"server_type"`
-	ServerName     string `json:"server_name"`
-	ServiceAddress string `json:"service_address"`
-	IPAddress      string `json:"ip"`
+	SystemName     string `json:"system_name,omitempty"`
+	SystemCNName   string `json:"system_cn_name,omitempty"`
+	ServerType     string `json:"server_type,omitempty"`
+	ServerName     string `json:"server_name,omitempty"`
+	ServiceAddress string `json:"service_address,omitempty"`
+	IPAddress      string `json:"ip,omitempty"`
 	URL            string `json:"url"`
 }
 
 func toPlat(r *pub.DNSConf, domain string) *Plat {
-	_, port, _ := net.SplitHostPort(r.ServiceAddress)
 	p := &Plat{}
 	p.PlatName = r.PlatName
 	p.PlatCNName = r.PlatCNName
@@ -334,7 +353,7 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 			ServerName:     r.ServerName,
 			ServiceAddress: r.ServiceAddress,
 			IPAddress:      r.IPAddress,
-			URL:            net.JoinHostPort(domain, port),
+			URL:            GetURL(r.Proto, domain, r.Port),
 		},
 	}
 	return p

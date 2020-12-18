@@ -25,7 +25,10 @@ func (u *DdnsHandler) RequestHandle(ctx hydra.IContext) (r interface{}) {
 	}
 
 	ctx.Log().Info("2. 检查并创建解析信息")
-	return local.R.CreateOrUpdate(domain.Domain, domain.IP, domain.Value)
+	if err := local.R.CreateOrUpdate(domain.Domain, domain.IP, domain.Value); err != nil {
+		return err
+	}
+	return "success"
 }
 
 //QueryHandle 查询域名信息
