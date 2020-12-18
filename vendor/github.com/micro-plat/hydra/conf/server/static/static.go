@@ -104,7 +104,6 @@ func unarchive(dir string, path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("创建临时文件失败:%v", err)
 	}
-	//	ndir := filepath.Join(dir, tmpDir)
 	err = archiver.Unarchive(path, tmpDir)
 	if err != nil {
 		return "", fmt.Errorf("指定的文件%s解压失败:%v", path, err)
@@ -113,6 +112,7 @@ func unarchive(dir string, path string) (string, error) {
 	waitRemoveDir = append(waitRemoveDir, tmpDir)
 	return tmpDir, nil
 }
+
 func init() {
 	global.Def.AddCloser(func() error {
 		for _, d := range waitRemoveDir {

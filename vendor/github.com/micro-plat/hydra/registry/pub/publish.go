@@ -105,7 +105,7 @@ func (p *Publisher) Publish(serverName string, serviceAddr string, clusterID str
 	}
 	switch p.c.GetServerType() {
 	case global.API, global.Web:
-		if _, err := p.PubDNSNode(serverName); err != nil {
+		if _, err := p.PubDNSNode(serverName, serviceAddr); err != nil {
 			return err
 		}
 		_, err := p.PubAPIServiceNode(serverName, data)
@@ -179,7 +179,7 @@ func (p *Publisher) PubAPIServiceNode(serverName string, data string) (map[strin
 }
 
 //PubDNSNode 发布DNS服务节点
-func (p *Publisher) PubDNSNode(serverName string) (map[string]string, error) {
+func (p *Publisher) PubDNSNode(serverName string, serviceAddr string) (map[string]string, error) {
 	//获取服务嚣配置
 	server, err := api.GetConf(p.c)
 	if err != nil {
@@ -188,19 +188,62 @@ func (p *Publisher) PubDNSNode(serverName string) (map[string]string, error) {
 	if server.Domain == "" {
 		return p.pubs, nil
 	}
-
-	//创建DNS节点
-	ip, _, err := net.SplitHostPort(serverName)
+	proto, addr, err := global.ParseProto(serviceAddr)
 	if err != nil {
 		return nil, err
 	}
-	path := registry.Join(p.c.GetDNSPubPath(server.Domain), ip)
-	err = p.c.GetRegistry().CreateTempNode(path, "")
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	input := map[string]interface{}{
+		"plat_name":       p.c.GetPlatName(),
+		"plat_cn_name":    global.Def.PlatCNName,
+		"system_name":     p.c.GetSysName(),
+		"system_cn_name":  global.Def.SysCNName,
+		"server_type":     p.c.GetServerType(),
+		"cluster_name":    p.c.GetClusterName(),
+		"server_name":     serverName,
+		"service_address": serviceAddr,
+		"proto":           proto,
+		"host":            host,
+		"port":            port,
+		"ip":              global.LocalIP(),
+	}
+	buff, err := jsons.Marshal(input)
+	if err != nil {
+		return nil, fmt.Errorf("更新dns服务器发布数据失败:%w", err)
+	}
+	ndata := string(buff)
+
+	//创建DNSIP节点
+	ip, port, err := net.SplitHostPort(serverName)
+	if err != nil {
+		return nil, err
+	}
+
+	domain := strings.Trim(strings.TrimPrefix(server.Domain, "www"), ".")
+	path := registry.Join(p.c.GetDNSPubPath(domain), fmt.Sprintf("%s:%s", ip, port))
+	exist, err := p.c.GetRegistry().Exists(path)
 	if err != nil {
 		err = fmt.Errorf("DNS服务发布失败:(%s)[%v]", path, err)
 		return nil, err
 	}
-	p.appendPub(path, "")
+
+	if exist {
+		err = p.c.GetRegistry().Update(path, ndata)
+	} else {
+		err = p.c.GetRegistry().CreateTempNode(path, ndata)
+	}
+
+	if err != nil {
+		err = fmt.Errorf("DNS服务发布失败:(%s)[%v]", path, err)
+		return nil, err
+	}
+
+	//加入节点检查
+	p.appendPub(path, ndata)
 	return p.pubs, nil
 }
 

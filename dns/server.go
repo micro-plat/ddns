@@ -3,10 +3,13 @@ package dns
 import (
 	"fmt"
 	"time"
+	"strings"
 
 	dnsconf "github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/names"
 	"github.com/micro-plat/hydra"
+	"github.com/micro-plat/hydra/global"
+
 	"github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/conf/app"
 	"github.com/micro-plat/hydra/conf/server/api"
@@ -21,17 +24,28 @@ import (
 
 //App dns应用程序
 var App = hydra.NewApp(
-	hydra.WithPlatName("ddns-test_hj"),
+	hydra.WithPlatName("ddns"),
 	hydra.WithSystemName("ddnsserver"),
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, http.API, cron.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"),
-	hydra.WithRegistry("zk://192.168.0.101"),
+	hydra.WithRunFlag("dnsroot", "DNS的跟节点名称"),
+	// hydra.WithRegistry("zk://192.168.0.101"),
 )
 
 func init() {
 	hydra.Conf.API(":9090", api.WithTimeout(300, 300)).
 		Header(header.WithCrossDomain())
+
+	App.Cli.Run.OnStarting(func(c global.ICli) error {
+		root := c.String("dnsroot")
+		if root != "" {
+			root = strings.Trim(root,"/")
+			hydra.G.DNSRoot = "/" +root
+		}
+		return nil
+	})
+
 }
 
 //Server DNS服务器

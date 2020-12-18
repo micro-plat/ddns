@@ -2,7 +2,6 @@ package pkgs
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"os"
 	"time"
@@ -61,7 +60,6 @@ func GetNameServers() (nameserver []string, err error) {
 	}
 	nameserver = Distinct(nameserver)
 	sort.Strings(nameserver)
-	fmt.Println("darwin.nameserver:", nameserver)
 
 	return nameserver, nil
 
