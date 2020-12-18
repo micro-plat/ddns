@@ -32,7 +32,8 @@ func New() (*Remote, error) {
 //Lookup 从远程服务器查询解析信息
 func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) {
 	//如果被解析的地址就是本地ip  那么就直接返回本机ip作为解析结果
-	if b := r.checkLocalIP(req.Question[0].Name); b {
+	localIP := global.LocalIP()
+	if strings.HasPrefix(req.Question[0].Name, localIP) {
 		message = &dns.Msg{}
 		message.Id = req.Id
 		message.Question = req.Question
@@ -42,7 +43,7 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, err error) 
 			Class:  dns.ClassINET,
 			Ttl:    600,
 		}
-		ip := xnet.ParseIP(global.LocalIP())
+		ip := xnet.ParseIP(localIP)
 		if ip != nil {
 			message.Answer = append(message.Answer, &dns.A{header, ip})
 			return
