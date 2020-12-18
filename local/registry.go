@@ -303,7 +303,9 @@ func (r *Registry) lazyBuild() {
 
 			//重新构建平台分组数据
 			col := make(platCollection, 3)
+
 			items := r.domainDetails.Items()
+			fmt.Println("lazy.build:", items)
 			for k, v := range items {
 				list := v.([][]byte)
 				for _, buff := range list {
