@@ -1,8 +1,6 @@
 package dns
 
 import (
-	"strings"
-
 	"github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/services"
 	"github.com/micro-plat/ddns/web"
@@ -11,7 +9,6 @@ import (
 	"github.com/micro-plat/hydra/conf/server/cron"
 	"github.com/micro-plat/hydra/conf/server/header"
 	"github.com/micro-plat/hydra/conf/server/static"
-	"github.com/micro-plat/hydra/global"
 	"github.com/micro-plat/hydra/hydra/servers/http"
 
 	c "github.com/micro-plat/hydra/hydra/servers/cron"
@@ -43,15 +40,6 @@ func init() {
 	App.Micro("/github/ip/*", services.NewGithubHandler())
 	App.CRON("/github/ip/*", services.NewGithubHandler())
 	hydra.CRON.Add("@midnight", "/github/ip/request")
-	hydra.CRON.Add("@now", "/github/ip/request")
-
-	App.Cli.Run.OnStarting(func(c global.ICli) error {
-		root := c.String("dnsroot")
-		if root != "" {
-			root = strings.Trim(root, "/")
-			hydra.G.DNSRoot = "/" + root
-		}
-		return nil
-	})
+	// hydra.CRON.Add("@now", "/github/ip/request")
 
 }

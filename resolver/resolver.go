@@ -49,7 +49,7 @@ func (r *Resolver) Lookup(net string, req *dns.Msg) (message *dns.Msg, cache boo
 	//查询远程服务
 	rmsg, count, err := r.remote.Lookup(req, net)
 	if err != nil {
-		return nil, false, count, fmt.Errorf("未获取到解析结果:%w", err)
+		return nil, false, count, err
 	}
 
 	//数据正确则保存到缓存

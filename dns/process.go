@@ -63,7 +63,6 @@ func (p *Processor) execute() middleware.Handler {
 		writer := w.(dns.ResponseWriter)
 
 		//解析域名
-		ctx.Log().Info("----------------:", ctx.Request().Headers().GetString("net"))
 		msg, cache, count, err := p.resolver.Lookup(ctx.Request().Headers().GetString("net"), req)
 		if err != nil {
 			ctx.Response().WriteAny(err)

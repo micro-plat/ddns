@@ -82,6 +82,7 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 		})
 	}
 
+	//发送首个信号
 	msgChan <- struct{}{}
 	//启动指定协程，收到指令后启动任务
 	for _, host := range names {
@@ -132,7 +133,9 @@ loop:
 
 func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log logger.ILogger) (res *dns.Msg, err error) {
 	log.Debug("exchange.start:", req.Question[0].Name, nameserver)
-	defer log.Debug("exchange.end:", req.Question[0].Name, nameserver, err)
+	defer func() {
+		log.Debug("exchange.end:", req.Question[0].Name, nameserver, err)
+	}()
 	start := time.Now()
 	res, err = dns.Exchange(req, nameserver)
 	if err != nil {
