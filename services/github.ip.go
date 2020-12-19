@@ -52,7 +52,7 @@ func GetGithubDomains() (domains []*Domain, err error) {
 	var res string
 	for k, v := range address {
 		url := v
-		err = chromedp.Run(ctx, chromedp.Tasks{
+		err = chromedp.Run(tctx, chromedp.Tasks{
 			chromedp.Navigate(url),
 			chromedp.Sleep(5 * time.Second),
 			chromedp.OuterHTML(`body`, &res, chromedp.ByQuery),
@@ -66,7 +66,7 @@ func GetGithubDomains() (domains []*Domain, err error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(k,ip)
+		fmt.Println(k, ip)
 		if ip == "" {
 			continue
 		}
