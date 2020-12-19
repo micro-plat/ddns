@@ -43,13 +43,13 @@ func GetGithubDomains() (domains []*Domain, err error) {
 	)
 	defer cancel()
 
-	ctx, cancel = context.WithTimeout(ctx, 50*time.Second)
-	defer cancel()
+	tctx, tcancel := context.WithTimeout(ctx, 50*time.Second)
+	defer tcancel()
 
 	var res string
 	for _, v := range address {
 		url := v
-		err = chromedp.Run(ctx, chromedp.Tasks{
+		err = chromedp.Run(tctx, chromedp.Tasks{
 			chromedp.Navigate(searchPage),
 			chromedp.WaitVisible(`form`, chromedp.ByQuery),
 			chromedp.SendKeys(`body > div > main > form > input[type=text]`, url, chromedp.BySearch),

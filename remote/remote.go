@@ -35,6 +35,7 @@ func New() (*Remote, error) {
 
 //Lookup 从远程服务器查询解析信息
 func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, count int, err error) {
+
 	b, mes := r.checkAnalyHost(req)
 	if b {
 		return mes, 0, nil
@@ -62,6 +63,7 @@ func (r *Remote) Lookup(req *dns.Msg, net string) (message *dns.Msg, count int, 
 }
 
 func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *dns.Msg, int, []error) {
+
 	response := make(chan *dns.Msg, len(names))
 	errList := make([]error, 0, 1)
 
@@ -80,6 +82,7 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 		})
 	}
 
+	msgChan <- struct{}{}
 	//启动指定协程，收到指令后启动任务
 	for _, host := range names {
 		go func(h string, logger logger.ILogger) {
@@ -88,9 +91,7 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 				stop()
 				return
 			}
-			logger.Debug("strt.look.up", h)
-			res, err := r.singleLookup(net, h, req)
-			logger.Debug("look.up", h, err)
+			res, err := r.singleLookup(net, h, req, logger)
 			if err != nil { //发生错误
 				errList = append(errList, err)
 			} else {
@@ -129,20 +130,20 @@ loop:
 	return response, int(count), errList
 }
 
-func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg) (res *dns.Msg, err error) {
-	c := &dns.Client{
-		Net: net,
-	}
-	res, rtt, err := c.Exchange(req, nameserver)
+func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log logger.ILogger) (res *dns.Msg, err error) {
+	log.Debug("exchange.start:", req.Question[0].Name, nameserver)
+	defer log.Debug("exchange.end:", req.Question[0].Name, nameserver, err)
+	start := time.Now()
+	res, err = dns.Exchange(req, nameserver)
 	if err != nil {
 		return nil, err
 	}
 
 	//异步更新rtt
-	go r.names.UpdateRTT(nameserver, rtt)
+	go r.names.UpdateRTT(nameserver, time.Since(start))
 	if res != nil {
-		if res.Rcode == dns.RcodeServerFailure {
-			return nil, fmt.Errorf("请求失败")
+		if res.Rcode != dns.RcodeSuccess {
+			return nil, fmt.Errorf("请求失败:%d", res.Rcode)
 		}
 	}
 	if len(res.Answer) > 0 {
