@@ -68,7 +68,7 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 	msgChan := make(chan struct{}, len(names))
 	stopCh := make(chan struct{})
 	var once sync.Once
-	ticker := time.NewTicker(time.Millisecond * 1000)
+	ticker := time.NewTicker(time.Second)
 	var count int32
 
 	stop := func() {
@@ -131,9 +131,7 @@ loop:
 
 func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg) (res *dns.Msg, err error) {
 	c := &dns.Client{
-		Net:          net,
-		ReadTimeout:  time.Second * 5,
-		WriteTimeout: time.Second * 5,
+		Net: net,
 	}
 	res, rtt, err := c.Exchange(req, nameserver)
 	if err != nil {
