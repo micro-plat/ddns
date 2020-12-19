@@ -119,7 +119,7 @@ func (r *Registry) CreateOrUpdateGithub(domain string, ip string, value ...strin
 			}
 		}
 	}
-	return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
+	return r.r.CreatePersistentNode(path, types.GetString(types.GetStringByIndex(value, 0), "{}"))
 }
 
 //CreateOrUpdate 创建或设置域名的IP信息
