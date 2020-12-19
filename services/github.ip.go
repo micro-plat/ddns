@@ -51,7 +51,7 @@ func GetGithubDomains() (domains []*Domain, err error) {
 			return nil, err
 		}
 		if ip == "" {
-			continue
+			return nil, fmt.Errorf("地址解析失败，无法正确获得IP地址信息")
 		}
 		domains = append(domains, &Domain{Domain: domain, IP: ip})
 	}
