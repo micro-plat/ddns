@@ -12,9 +12,12 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-var address = []string{"github.com", "assets-cdn.github.com", "github.global.ssl.fastly.net"}
+var address = map[string]string{
+	"github.com":                   "https://github.com.ipaddress.com",
+	"assets-cdn.github.com":        "https://github.com.ipaddress.com/assets-cdn.github.com",
+	"github.global.ssl.fastly.net": "https://fastly.net.ipaddress.com/github.global.ssl.fastly.net",
+}
 
-var searchPage = "https://www.ipaddress.com/search"
 var checkURL = "https://github.com/"
 
 // getIP 获取ip
@@ -47,29 +50,27 @@ func GetGithubDomains() (domains []*Domain, err error) {
 	defer cancel()
 
 	var res string
-	for _, v := range address {
+	for k, v := range address {
 		url := v
 		err = chromedp.Run(ctx, chromedp.Tasks{
-			chromedp.Navigate(searchPage),
-			chromedp.WaitVisible(`form`, chromedp.ByQuery),
-			chromedp.SendKeys(`body > div > main > form > input[type=text]`, url, chromedp.BySearch),
-			chromedp.Click("body > div > main > form > button:nth-child(2)", chromedp.ByQuery),
+			chromedp.Navigate(url),
 			chromedp.Sleep(5 * time.Second),
 			chromedp.OuterHTML(`body`, &res, chromedp.ByQuery),
 			chromedp.Sleep(5 * time.Second),
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("搜索出错%s %w", url, err)
+			return nil, fmt.Errorf("请求出错%s %w", url, err)
 		}
 		ip, err := getIP(res, v)
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println(k,ip)
 		if ip == "" {
 			continue
 		}
-		domains = append(domains, &Domain{Domain: url, IP: ip})
+		domains = append(domains, &Domain{Domain: k, IP: ip})
 	}
 	return
 }
