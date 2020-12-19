@@ -13,18 +13,20 @@ import (
 //Processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type Processor struct {
 	*dispatcher.Engine
-	resolver *resolver.Resolver
-	once     sync.Once
+	resolver      *resolver.Resolver
+	once          sync.Once
+	onlyUseRemote bool
 }
 
 //NewProcessor 创建processor
-func NewProcessor() (p *Processor, err error) {
+func NewProcessor(onlyUseRemote bool) (p *Processor, err error) {
 	r, err := resolver.New()
 	if err != nil {
 		return nil, err
 	}
 	p = &Processor{
-		resolver: r,
+		onlyUseRemote: onlyUseRemote,
+		resolver:      r,
 	}
 	p.Engine = dispatcher.New()
 	p.Engine.Use(middleware.Recovery().DispFunc(DDNS))
@@ -63,7 +65,7 @@ func (p *Processor) execute() middleware.Handler {
 		writer := w.(dns.ResponseWriter)
 
 		//解析域名
-		msg, cache, count, err := p.resolver.Lookup(ctx.Request().Headers().GetString("net"), req)
+		msg, cache, count, err := p.resolver.Lookup(ctx.Request().Headers().GetString("net"), req, p.onlyUseRemote)
 		if err != nil {
 			ctx.Response().WriteAny(err)
 			return

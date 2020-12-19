@@ -161,16 +161,15 @@ func (s *Server) serve(ds *dns.Server) error {
 }
 
 func (s *Server) getServer(cnf app.IAPPConf) (servers []*dns.Server, p *Processor, err error) {
-	p, err = NewProcessor()
-	if err != nil {
-		return nil, nil, err
-	}
+
 	dnsConf, err := dnsconf.GetConf(cnf.GetServerConf())
 	if err != nil {
-		p.Close()
 		return nil, nil, err
 	}
-
+	p, err = NewProcessor(dnsConf.OnlyUseRemote)
+	if err != nil {
+		return nil, nil, err
+	}
 	s.address = dnsConf.GetAddress()
 	tcpHandler := dns.NewServeMux()
 	tcpHandler.HandleFunc(".", p.TCP())

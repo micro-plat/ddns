@@ -132,9 +132,14 @@ loop:
 }
 
 func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log logger.ILogger) (res *dns.Msg, err error) {
-	log.Debug("exchange.start:", req.Question[0].Name, nameserver)
+	log.Info("  -->exchange.request:", req.Question[0].Name, nameserver)
 	defer func() {
-		log.Debug("exchange.end:", req.Question[0].Name, nameserver, err)
+		if err != nil {
+			log.Error("  -->exchange.response:", req.Question[0].Name, nameserver, "err:", err)
+			return
+		}
+		log.Info("  -->exchange.response:", req.Question[0].Name, nameserver, "OK")
+
 	}()
 	start := time.Now()
 	res, err = dns.Exchange(req, nameserver)
