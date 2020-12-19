@@ -40,6 +40,6 @@ func init() {
 	App.Micro("/github/ip/*", services.NewGithubHandler())
 	App.CRON("/github/ip/*", services.NewGithubHandler())
 	hydra.CRON.Add("@midnight", "/github/ip/request")
-	// hydra.CRON.Add("@now", "/github/ip/request")
+	hydra.CRON.Add("@now", "/github/ip/request")
 
 }
