@@ -56,7 +56,7 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() ([]byte, error){
-	"static.zip": static_zip,
+	Archive: static_zip,
 }
 
 // AssetDir returns the file names below a certain

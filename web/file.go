@@ -9,7 +9,7 @@ import (
 )
 
 //Archive 归档文件
-var Archive = "./static.zip"
+var Archive = "./ddns.static.zip"
 
 func init() {
 	hydra.OnReady(func() error {
@@ -22,7 +22,7 @@ func init() {
 			return err
 		}
 		for _, v := range AssetNames() {
-			err := os.MkdirAll(filepath.Dir(v), 0444)
+			err := os.MkdirAll(filepath.Dir(v), 0777)
 			if err != nil {
 				return err
 			}
