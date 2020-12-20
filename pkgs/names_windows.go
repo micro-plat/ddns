@@ -69,11 +69,16 @@ func GetNameServers() (nameserver []string, err error) {
 			err = fmt.Errorf(`读取HKEY_LOCAL_MACHINE\%s 子节点失败：%w`, registrykey, err1)
 			return
 		}
+
 		val, _, err := regsubkey.GetStringValue("NameServer")
 		if err != nil {
 			continue
 		}
-		nameserver = append(nameserver, strings.Split(strings.TrimSpace(val), ",")...)
+		val = strings.TrimSpace(val)
+		if val != "" {
+			nameserver = append(nameserver, strings.Split(val, ",")...)
+			fmt.Println("sk:", val, nameserver)
+		}
 	}
 	nameserver = Distinct(nameserver)
 	sort.Strings(nameserver)
