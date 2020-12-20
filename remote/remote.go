@@ -70,11 +70,13 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 	msgChan := make(chan struct{}, len(names))
 	stopCh := make(chan struct{})
 	var once sync.Once
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Millisecond * 300)
 	var count int32
+	var isClose = false
 
 	stop := func() {
 		once.Do(func() { //关闭消息队列，和时钟
+			isClose = true
 			close(msgChan)
 			close(stopCh)
 			ticker.Stop()
@@ -97,7 +99,10 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 				errList = append(errList, err)
 			} else {
 				if res != nil { //有正确的响应
-					response <- res
+					if !isClose {
+						response <- res
+					}
+
 					stop()
 				}
 			}
@@ -151,7 +156,7 @@ func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log l
 	go r.names.UpdateRTT(nameserver, time.Since(start))
 	if res != nil {
 		if res.Rcode != dns.RcodeSuccess {
-			return nil, fmt.Errorf("请求失败:%d", res.Rcode)
+			return nil, fmt.Errorf("请求失败:%d %s", res.Rcode, dns.RcodeToString[res.Rcode])
 		}
 	}
 	if len(res.Answer) > 0 {

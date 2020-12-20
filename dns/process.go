@@ -14,6 +14,7 @@ import (
 type Processor struct {
 	*dispatcher.Engine
 	resolver      *resolver.Resolver
+	metric        *middleware.Metric
 	once          sync.Once
 	onlyUseRemote bool
 }
@@ -27,12 +28,14 @@ func NewProcessor(onlyUseRemote bool) (p *Processor, err error) {
 	p = &Processor{
 		onlyUseRemote: onlyUseRemote,
 		resolver:      r,
+		metric:        middleware.NewMetric(),
 	}
 	p.Engine = dispatcher.New()
 	p.Engine.Use(middleware.Recovery().DispFunc(DDNS))
 	p.Engine.Use(middleware.Logging().DispFunc())
 	p.Engine.Use(middleware.Recovery().DispFunc())
 	p.Engine.Use(middleware.Trace().DispFunc()) //跟踪信息
+	p.Engine.Use(p.metric.Handle().DispFunc())  //生成metric报表
 	p.Engine.Handle(DefMethod, "/*name", p.execute().DispFunc(DDNS))
 	return p, nil
 }
