@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
+	defer logger.Close()
 	if err := compatible.CheckPrivileges(); err != nil {
-		defer logger.Close()
 		hydra.G.Log().Error(err)
 		return
 	}
