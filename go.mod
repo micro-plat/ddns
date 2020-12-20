@@ -9,7 +9,7 @@ replace github.com/micro-plat/lib4go => ../../../github.com/micro-plat/lib4go
 require (
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
-	github.com/chromedp/chromedp v0.5.3
+	github.com/chromedp/chromedp v0.5.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/micro-plat/hydra v0.0.0-00010101000000-000000000000
 	github.com/micro-plat/lib4go v1.0.2
