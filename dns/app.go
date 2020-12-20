@@ -19,7 +19,7 @@ var App = hydra.NewApp(
 	hydra.WithPlatName("ddns"),
 	hydra.WithSystemName("ddnsserver"),
 	hydra.WithUsage("DNS服务"),
-	hydra.WithServerTypes(DDNS, http.API, c.CRON, http.Web),
+	hydra.WithServerTypes(DDNS, c.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"),
 	hydra.WithRunFlag("dnsroot", "DNS的跟节点名称"),
 )
