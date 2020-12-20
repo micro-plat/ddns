@@ -87,6 +87,7 @@ func (p *Processor) execute() middleware.Handler {
 
 //Close 关闭上游服务
 func (p *Processor) Close() {
+	defer p.metric.Stop()
 	p.once.Do(func() {
 		if p.resolver != nil {
 			p.resolver.Close()
