@@ -30,7 +30,7 @@ var _static_zip = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xda\x43\x
 func static_zip() ([]byte, error) {
 	return bindata_read(
 		_static_zip,
-		"static.zip",
+		Archive,
 	)
 }
 
@@ -100,5 +100,5 @@ type _bintree_t struct {
 }
 
 var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
-	"static.zip": &_bintree_t{static_zip, map[string]*_bintree_t{}},
+	Archive: &_bintree_t{static_zip, map[string]*_bintree_t{}},
 }}
