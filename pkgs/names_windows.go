@@ -77,7 +77,6 @@ func GetNameServers() (nameserver []string, err error) {
 		val = strings.TrimSpace(val)
 		if val != "" {
 			nameserver = append(nameserver, strings.Split(val, ",")...)
-			fmt.Println("sk:", val, nameserver)
 		}
 	}
 	nameserver = Distinct(nameserver)
