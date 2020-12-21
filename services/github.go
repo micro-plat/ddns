@@ -27,7 +27,7 @@ func (u *GithubHandler) RequestHandle(ctx hydra.IContext) (r interface{}) {
 	ctx.Log().Info("2.保存域名")
 	for _, v := range domians {
 		ctx.Log().Infof("保存%s %s", v.Domain, v.IP)
-		if err := local.R.CreateOrUpdateGithub(v.Domain, v.IP, v.Value); err != nil {
+		if err := local.R.CreateOrUpdate(v.Domain, v.IP, true, v.Value); err != nil {
 			return err
 		}
 	}
