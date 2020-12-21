@@ -11,6 +11,7 @@ import (
 	"github.com/micro-plat/hydra/conf/server/static"
 	"github.com/micro-plat/hydra/hydra/servers/http"
 
+	vchttp "github.com/micro-plat/hydra/conf/vars/http"
 	c "github.com/micro-plat/hydra/hydra/servers/cron"
 )
 
@@ -32,6 +33,7 @@ func init() {
 		Static(static.WithArchive(web.Archive)).
 		Header(header.WithCrossDomain())
 	hydra.Conf.CRON(cron.WithMasterSlave())
+	hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30))
 
 	//注册服务
 	App.Micro("/ddns/*", services.NewDdnsHandler())
