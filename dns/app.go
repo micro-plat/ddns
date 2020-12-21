@@ -21,7 +21,6 @@ var App = hydra.NewApp(
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, c.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"),
-	hydra.WithRunFlag("dnsroot", "DNS的跟节点名称"),
 )
 
 func init() {
