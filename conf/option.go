@@ -38,3 +38,10 @@ func WithUDPSize(UDPSize int) Option {
 		a.UDPSize = UDPSize
 	}
 }
+
+//WithOnlyUseRemote 只使用远程解析
+func WithOnlyUseRemote() Option {
+	return func(a *Server) {
+		a.OnlyUseRemote = true
+	}
+}

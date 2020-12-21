@@ -6,7 +6,7 @@
 
 √ 　支持从`hosts`(`/etc/hosts*`,`C:\Windows\System32\drivers\etc\hosts*`)读取配置信息
 
-√ 　支持从`/etc/names.conf`,`C:\Windows\System32\drivers\etc\names.conf`读取上游 DNS 服务器 IP
+√ 　支持从`//etc/resolv.conf`,`windows注册表`读取上游 DNS 服务器 IP
 
 √ 　支持从注册中心`/dns`读取配置
 
@@ -37,7 +37,7 @@ go install github.com/micro-plat/ddns
 - 安装
 
 ```sh
-sudo ddns install -r fs://../
+sudo ddns install
 ```
 
 - 运行
@@ -49,7 +49,7 @@ sudo ddns start
 - 测试
 
 ```sh
-dig github.com @ip
+dig github.com @127.0.0.1
 ```
 
 - 本机使用
@@ -107,47 +107,20 @@ DDNS实时收到解析信息
 [2019/08/23 16:31:12.48855][i][9077e9414][缓存:www.ddns.com,1条]
 ```
 
-
-## 5. 接口提交
-
-通过 ADSL 拨号的网络，每次拨号后的公网 IP 不同，可通过接口提交到 DDNS 服务器
-
-```sh
-curl  "http://127.0.0.1:9090/ddns/request?domain=api.bac.com&ip=192.168.4.121"
-```
-
-```sh
-[2019/08/23 16:31:11.997083][i][6ad7395c4]api.request GET /ddns/request?domain=api.bac.com&ip=192.168.4.121 from 127.0.0.1
-[2019/08/23 16:31:11.997521][i][6ad7395c4]--------------保存动态域名信息---------------
-[2019/08/23 16:31:11.997528][i][6ad7395c4]1. 检查必须参数
-[2019/08/23 16:31:11.997667][i][6ad7395c4]2. 获取分布式锁
-[2019/08/23 16:31:12.16919][i][6ad7395c4]3. 检查并创建解析信息
-[2019/08/23 16:31:12.56629][i][6ad7395c4]api.response GET /ddns/request?domain=api.bac.com&ip=192.168.4.121 200  59.578447ms
-```
-服务器实时收到解析信息
-
-```sh
-[2019/08/23 16:31:12.48855][i][9077e9414][缓存:api.bac.com,1条]
-```
-
-## 6.上游 DNS
+## 5.上游 DNS
 
 未在`hosts*`,或`注册中心`配置的域名，直接使用`上游DNS服务器`查询域名解析结果
 
-- 打开`etc/names.conf`文件，添加上游 DNS 服务器 IP
+- 打开`/etc/resolv.conf`文件，添加上游 DNS 服务器 IP
 
 ```sh
-sudo vim /etc/names.conf
+sudo vim /etc/resolv.conf 
 ```
 
 ```sh
-114.114.114.114
-8.8.8.8
-180.76.76.76
-119.6.6.6
-61.139.2.69
-
-"/etc/names.conf" 2L
+nameserver 127.0.0.1
+nameserver 114.114.114.114
+nameserver 8.8.8.8
 ```
 
 ## 7. 优先级
