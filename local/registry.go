@@ -33,6 +33,7 @@ type Registry struct {
 	onceWait      time.Duration
 	log           logger.ILogger
 	closeCh       chan struct{}
+	oncelock      sync.Once
 }
 
 //newRegistry 创建注册中心
@@ -56,16 +57,23 @@ func newRegistry() *Registry {
 
 //Start 启动注册中心监控
 func (r *Registry) Start() (err error) {
-	r.rootWatcher, err = watcher.NewChildWatcherByRegistry(r.r, []string{r.root}, r.log)
-	if err != nil {
-		return err
-	}
-	r.notify, err = r.rootWatcher.Start()
-	if err != nil {
-		return err
-	}
-	go r.loopWatch()
-	go r.lazyBuild()
+	defer func() {
+		if obj := recover(); obj != nil {
+			err = obj.(error)
+		}
+	}()
+	r.oncelock.Do(func() {
+		r.rootWatcher, err = watcher.NewChildWatcherByRegistry(r.r, []string{r.root}, r.log)
+		if err != nil {
+			panic(err)
+		}
+		r.notify, err = r.rootWatcher.Start()
+		if err != nil {
+			panic(err)
+		}
+		go r.loopWatch()
+		go r.lazyBuild()
+	})
 	return nil
 }
 func (r *Registry) loopWatch() {
