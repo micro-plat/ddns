@@ -9,7 +9,7 @@ import (
 )
 
 //Archive 归档文件
-var Archive = "./static.zip"
+var Archive = "./ddns.static.zip"
 
 func init() {
 	hydra.OnReady(func() error {
