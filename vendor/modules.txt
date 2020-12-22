@@ -1,6 +1,6 @@
 # github.com/BurntSushi/toml v0.3.1
 github.com/BurntSushi/toml
-# github.com/PuerkitoBio/goquery v1.5.1
+# github.com/PuerkitoBio/goquery v1.6.0
 ## explicit
 github.com/PuerkitoBio/goquery
 # github.com/SkyAPM/go2sky v0.6.0
@@ -14,11 +14,9 @@ github.com/SkyAPM/go2sky/reporter/grpc/language-agent
 github.com/SkyAPM/go2sky/reporter/grpc/management
 # github.com/andybalholm/cascadia v1.1.0
 github.com/andybalholm/cascadia
-# github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
+# github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
 ## explicit
 github.com/asaskevich/govalidator
-# github.com/chromedp/chromedp v0.5.3
-## explicit
 # github.com/clbanning/mxj v1.8.4
 github.com/clbanning/mxj
 # github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d
@@ -94,7 +92,7 @@ github.com/mholt/archiver
 # github.com/micro-plat/gmq v1.0.1
 github.com/micro-plat/gmq/mqtt
 github.com/micro-plat/gmq/mqtt/client
-# github.com/micro-plat/hydra v0.0.0-00010101000000-000000000000 => ../../../github.com/micro-plat/hydra
+# github.com/micro-plat/hydra v1.0.2
 ## explicit
 github.com/micro-plat/hydra
 github.com/micro-plat/hydra/components
@@ -198,7 +196,7 @@ github.com/micro-plat/hydra/registry/watcher
 github.com/micro-plat/hydra/registry/watcher/wchild
 github.com/micro-plat/hydra/registry/watcher/wvalue
 github.com/micro-plat/hydra/services
-# github.com/micro-plat/lib4go v1.0.2 => ../../../github.com/micro-plat/lib4go
+# github.com/micro-plat/lib4go v1.0.9
 ## explicit
 github.com/micro-plat/lib4go/concurrent/cmap
 github.com/micro-plat/lib4go/db
@@ -224,7 +222,7 @@ github.com/micro-plat/lib4go/tgo
 github.com/micro-plat/lib4go/types
 github.com/micro-plat/lib4go/utility
 github.com/micro-plat/lib4go/zk
-# github.com/miekg/dns v1.1.34
+# github.com/miekg/dns v1.1.35
 ## explicit
 github.com/miekg/dns
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
@@ -296,7 +294,7 @@ golang.org/x/net/ipv6
 golang.org/x/net/proxy
 golang.org/x/net/trace
 golang.org/x/net/websocket
-# golang.org/x/sys v0.0.0-20201015000850-e3ed0017c211
+# golang.org/x/sys v0.0.0-20201221093633-bc327ba9c2f0
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
@@ -397,5 +395,3 @@ gopkg.in/fsnotify.v1
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 gopkg.in/yaml.v3
-# github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra
-# github.com/micro-plat/lib4go => ../../../github.com/micro-plat/lib4go

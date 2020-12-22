@@ -33,6 +33,7 @@ type Registry struct {
 	onceWait      time.Duration
 	log           logger.ILogger
 	closeCh       chan struct{}
+	oncelock      sync.Once
 }
 
 //newRegistry 创建注册中心
@@ -56,16 +57,23 @@ func newRegistry() *Registry {
 
 //Start 启动注册中心监控
 func (r *Registry) Start() (err error) {
-	r.rootWatcher, err = watcher.NewChildWatcherByRegistry(r.r, []string{r.root}, r.log)
-	if err != nil {
-		return err
-	}
-	r.notify, err = r.rootWatcher.Start()
-	if err != nil {
-		return err
-	}
-	go r.loopWatch()
-	go r.lazyBuild()
+	defer func() {
+		if obj := recover(); obj != nil {
+			err = obj.(error)
+		}
+	}()
+	r.oncelock.Do(func() {
+		r.rootWatcher, err = watcher.NewChildWatcherByRegistry(r.r, []string{r.root}, r.log)
+		if err != nil {
+			panic(err)
+		}
+		r.notify, err = r.rootWatcher.Start()
+		if err != nil {
+			panic(err)
+		}
+		go r.loopWatch()
+		go r.lazyBuild()
+	})
 	return nil
 }
 func (r *Registry) loopWatch() {
@@ -99,41 +107,38 @@ func (r *Registry) GetDomainDetails() map[string][]*Plat {
 	return r.plats
 }
 
-//CreateOrUpdateGithub 创建或设置github域名的IP信息
-func (r *Registry) CreateOrUpdateGithub(domain string, ip string, value ...string) error {
-	domain = TrimDomain(domain)
-	root := registry.Join(r.root, domain)
-	path := registry.Join(r.root, domain, ip)
-	ok, err := r.r.Exists(root)
-	if err != nil {
-		return err
-	}
-	if ok {
-		paths, _, err := r.r.GetChildren(root)
-		if err != nil {
-			return err
-		}
-		for _, pc := range paths {
-			if err := r.r.Delete(registry.Join(root, pc)); err != nil {
-				return err
-			}
-		}
-	}
-	return r.r.CreatePersistentNode(path, types.GetString(types.GetStringByIndex(value, 0), "{}"))
-}
-
 //CreateOrUpdate 创建或设置域名的IP信息
-func (r *Registry) CreateOrUpdate(domain string, ip string, value ...string) error {
+func (r *Registry) CreateOrUpdate(domain string, ip string, delChildren bool, value ...string) error {
 	domain = TrimDomain(domain)
 	path := registry.Join(r.root, domain, ip)
-	ok, err := r.r.Exists(path)
+	root := registry.Join(r.root, domain)
+	if !delChildren {
+		root = path
+	}
+
+	ok, err := r.r.Exists(root)
 	if err != nil {
 		return err
 	}
 	if !ok {
 		return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
 	}
-	return r.r.Update(path, types.GetStringByIndex(value, 0, "{}"))
+
+	if !delChildren {
+		return r.r.Update(path, types.GetStringByIndex(value, 0, "{}"))
+	}
+
+	paths, _, err := r.r.GetChildren(root)
+	if err != nil {
+		return err
+	}
+	for _, pc := range paths {
+		if err := r.r.Delete(registry.Join(root, pc)); err != nil {
+			return err
+		}
+	}
+
+	return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
 }
 
 //Load 加载所有域名的IP信息
@@ -316,7 +321,7 @@ func (r *Registry) lazyBuild() {
 		case <-r.lazyClock.C:
 
 			//重新构建平台分组数据
-			col := make(platCollection)
+			col := newPlatCollection()
 
 			items := r.domainDetails.Items()
 			for k, v := range items {
@@ -333,7 +338,7 @@ func (r *Registry) lazyBuild() {
 				r.lazyClock.Reset(r.maxWait)
 			}
 			r.lock.Lock()
-			r.plats = col
+			r.plats = col.data
 			r.lock.Unlock()
 
 		}
@@ -368,7 +373,7 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 			ServerName:     r.ServerName,
 			ServiceAddress: r.ServiceAddress,
 			IPAddress:      r.IPAddress,
-			URL:            GetURL(r.Proto, r.Prefix, domain, r.Port),
+			URL:            GetURL(r.Proto, domain, r.Port),
 		},
 	}
 	return p
@@ -377,15 +382,24 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 //Append 将域名信息添加到列表
 var defTag = "-"
 
-type platCollection map[string][]*Plat
+type platCollection struct {
+	data map[string][]*Plat
+	lock sync.Mutex
+}
 
-func (r platCollection) append(domain string, buff []byte) error {
+func newPlatCollection() *platCollection {
+	return &platCollection{
+		data: make(map[string][]*Plat),
+	}
+}
+
+func (r *platCollection) append(domain string, buff []byte) error {
 	//外部注册域名
 	if len(buff) == 0 || types.BytesToString(buff) == "{}" {
-		if _, ok := r[defTag]; !ok {
-			r[defTag] = make([]*Plat, 0, 1)
+		if _, ok := r.data[defTag]; !ok {
+			r.data[defTag] = make([]*Plat, 0, 1)
 		}
-		r[defTag] = append(r[defTag], &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
+		r.data[defTag] = append(r.data[defTag], &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
 		return nil
 	}
 	//转换服务对应的详情信息
@@ -397,21 +411,21 @@ func (r platCollection) append(domain string, buff []byte) error {
 		return nil
 	}
 	plat := toPlat(raw, domain)
-	plats, ok := r[raw.ServerType]
+	plats, ok := r.data[raw.ServerType]
 	if !ok {
-		r[raw.ServerType] = []*Plat{plat}
+		r.data[raw.ServerType] = []*Plat{plat}
 		return nil
 	}
 
 	//平台存时，将当前信息添加到指定集群
 	for k, v := range plats {
 		if v.PlatName == plat.PlatName {
-			r[raw.ServerType][k].Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
+			r.data[raw.ServerType][k].Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
 			return nil
 		}
 	}
 	//没有同名的平台，直接追加
-	r[raw.ServerType] = append(r[raw.ServerType], plat)
+	r.data[raw.ServerType] = append(r.data[raw.ServerType], plat)
 	return nil
 
 }

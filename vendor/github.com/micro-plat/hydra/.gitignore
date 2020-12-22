@@ -1,4 +1,3 @@
-logs
 !*.go
 *.pyc
 *.exe
@@ -18,3 +17,5 @@ testserver*
 examples/conf
 logger.toml
 consul*
+mqctestserver*
+rpctestservre*
