@@ -365,7 +365,7 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 			ServerName:     r.ServerName,
 			ServiceAddress: r.ServiceAddress,
 			IPAddress:      r.IPAddress,
-			URL:            GetURL(r.Proto, r.Prefix, domain, r.Port),
+			URL:            GetURL(r.Proto, domain, r.Port),
 		},
 	}
 	return p
