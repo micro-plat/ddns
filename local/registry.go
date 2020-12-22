@@ -1,7 +1,6 @@
 package local
 
 import (
-	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -34,6 +33,7 @@ type Registry struct {
 	onceWait      time.Duration
 	log           logger.ILogger
 	closeCh       chan struct{}
+	oncelock      sync.Once
 }
 
 //newRegistry 创建注册中心
@@ -57,16 +57,23 @@ func newRegistry() *Registry {
 
 //Start 启动注册中心监控
 func (r *Registry) Start() (err error) {
-	r.rootWatcher, err = watcher.NewChildWatcherByRegistry(r.r, []string{r.root}, r.log)
-	if err != nil {
-		return err
-	}
-	r.notify, err = r.rootWatcher.Start()
-	if err != nil {
-		return err
-	}
-	go r.loopWatch()
-	go r.lazyBuild()
+	defer func() {
+		if obj := recover(); obj != nil {
+			err = obj.(error)
+		}
+	}()
+	r.oncelock.Do(func() {
+		r.rootWatcher, err = watcher.NewChildWatcherByRegistry(r.r, []string{r.root}, r.log)
+		if err != nil {
+			panic(err)
+		}
+		r.notify, err = r.rootWatcher.Start()
+		if err != nil {
+			panic(err)
+		}
+		go r.loopWatch()
+		go r.lazyBuild()
+	})
 	return nil
 }
 func (r *Registry) loopWatch() {
@@ -100,42 +107,38 @@ func (r *Registry) GetDomainDetails() map[string][]*Plat {
 	return r.plats
 }
 
-//CreateOrUpdateGithub 创建或设置github域名的IP信息
-func (r *Registry) CreateOrUpdateGithub(domain string, ip string, value ...string) error {
+//CreateOrUpdate 创建或设置域名的IP信息
+func (r *Registry) CreateOrUpdate(domain string, ip string, delChildren bool, value ...string) error {
 	domain = TrimDomain(domain)
-	root := registry.Join(r.root, domain)
 	path := registry.Join(r.root, domain, ip)
+	root := registry.Join(r.root, domain)
+	if !delChildren {
+		root = path
+	}
+
 	ok, err := r.r.Exists(root)
 	if err != nil {
 		return err
 	}
-	if ok {
-		paths, _, err := r.r.GetChildren(root)
-		if err != nil {
-			return err
-		}
-		for _, pc := range paths {
-			if err := r.r.Delete(registry.Join(root, pc)); err != nil {
-				return err
-			}
-		}
-	}
-	return r.r.CreatePersistentNode(path, types.GetString(types.GetStringByIndex(value, 0), "{}"))
-}
-
-//CreateOrUpdate 创建或设置域名的IP信息
-func (r *Registry) CreateOrUpdate(domain string, ip string, value ...string) error {
-	domain = TrimDomain(domain)
-	path := registry.Join(r.root, domain, ip)
-	ok, err := r.r.Exists(path)
-	if err != nil {
-		return err
-	}
-	fmt.Println(path, ok, err)
 	if !ok {
 		return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
 	}
-	return r.r.Update(path, types.GetStringByIndex(value, 0, "{}"))
+
+	if !delChildren {
+		return r.r.Update(path, types.GetStringByIndex(value, 0, "{}"))
+	}
+
+	paths, _, err := r.r.GetChildren(root)
+	if err != nil {
+		return err
+	}
+	for _, pc := range paths {
+		if err := r.r.Delete(registry.Join(root, pc)); err != nil {
+			return err
+		}
+	}
+
+	return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
 }
 
 //Load 加载所有域名的IP信息
@@ -370,7 +373,7 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 			ServerName:     r.ServerName,
 			ServiceAddress: r.ServiceAddress,
 			IPAddress:      r.IPAddress,
-			URL:            GetURL(r.Proto, r.Prefix, domain, r.Port),
+			URL:            GetURL(r.Proto, domain, r.Port),
 		},
 	}
 	return p
