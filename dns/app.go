@@ -21,7 +21,7 @@ var App = hydra.NewApp(
 	hydra.WithSystemName("ddns", "域名解析"),
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, c.CRON, http.Web),
-	hydra.WithClusterName("dns-1.2"),
+	hydra.WithClusterName("prod"),
 )
 
 func init() {
