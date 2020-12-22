@@ -196,5 +196,4 @@ func (r *Remote) Close() {
 	if r.names != nil {
 		r.names.Close()
 	}
-
 }

@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -96,6 +97,7 @@ func (r *Registry) Lookup(domain string) ([]net.IP, bool) {
 func (r *Registry) GetDomainDetails() map[string][]*Plat {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
+	fmt.Println("details:", r.domainDetails.Count())
 	return r.plats
 }
 
@@ -130,6 +132,7 @@ func (r *Registry) CreateOrUpdate(domain string, ip string, value ...string) err
 	if err != nil {
 		return err
 	}
+	fmt.Println(path, ok, err)
 	if !ok {
 		return r.r.CreatePersistentNode(path, types.GetStringByIndex(value, 0, "{}"))
 	}
@@ -190,6 +193,7 @@ func (r *Registry) load() error {
 						return
 					case <-notify:
 						//获取所有IP列表
+						fmt.Println("notify:", d)
 						if err := r.loadIP(d); err != nil {
 							r.log.Error(err)
 						}
@@ -253,6 +257,7 @@ func (r *Registry) loadDetail(domain string) error {
 	//拉取每个IP对应的值
 	list := make([][]byte, 0, len(ips))
 	for _, ip := range ips {
+		fmt.Println("loadDetail:", registry.Join(path, ip))
 		buff, _, err := r.r.GetValue(registry.Join(path, ip))
 		if err != nil {
 			return err
@@ -260,6 +265,7 @@ func (r *Registry) loadDetail(domain string) error {
 		list = append(list, buff)
 	}
 	//保存到域名列表
+	fmt.Println("loadDetail.Set:", domain)
 	r.domainDetails.Set(domain, list)
 
 	//通过延迟加载的方式更新平台分组数据
@@ -316,7 +322,7 @@ func (r *Registry) lazyBuild() {
 		case <-r.lazyClock.C:
 
 			//重新构建平台分组数据
-			col := make(platCollection)
+			col := newPlatCollection()
 
 			items := r.domainDetails.Items()
 			for k, v := range items {
@@ -333,7 +339,7 @@ func (r *Registry) lazyBuild() {
 				r.lazyClock.Reset(r.maxWait)
 			}
 			r.lock.Lock()
-			r.plats = col
+			r.plats = col.data
 			r.lock.Unlock()
 
 		}
@@ -377,15 +383,24 @@ func toPlat(r *pub.DNSConf, domain string) *Plat {
 //Append 将域名信息添加到列表
 var defTag = "-"
 
-type platCollection map[string][]*Plat
+type platCollection struct {
+	data map[string][]*Plat
+	lock sync.Mutex
+}
 
-func (r platCollection) append(domain string, buff []byte) error {
+func newPlatCollection() *platCollection {
+	return &platCollection{
+		data: make(map[string][]*Plat),
+	}
+}
+
+func (r *platCollection) append(domain string, buff []byte) error {
 	//外部注册域名
 	if len(buff) == 0 || types.BytesToString(buff) == "{}" {
-		if _, ok := r[defTag]; !ok {
-			r[defTag] = make([]*Plat, 0, 1)
+		if _, ok := r.data[defTag]; !ok {
+			r.data[defTag] = make([]*Plat, 0, 1)
 		}
-		r[defTag] = append(r[defTag], &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
+		r.data[defTag] = append(r.data[defTag], &Plat{Clusters: map[string]*System{"-": &System{URL: domain}}})
 		return nil
 	}
 	//转换服务对应的详情信息
@@ -397,21 +412,21 @@ func (r platCollection) append(domain string, buff []byte) error {
 		return nil
 	}
 	plat := toPlat(raw, domain)
-	plats, ok := r[raw.ServerType]
+	plats, ok := r.data[raw.ServerType]
 	if !ok {
-		r[raw.ServerType] = []*Plat{plat}
+		r.data[raw.ServerType] = []*Plat{plat}
 		return nil
 	}
 
 	//平台存时，将当前信息添加到指定集群
 	for k, v := range plats {
 		if v.PlatName == plat.PlatName {
-			r[raw.ServerType][k].Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
+			r.data[raw.ServerType][k].Clusters[raw.ClusterName] = plat.Clusters[raw.ClusterName]
 			return nil
 		}
 	}
 	//没有同名的平台，直接追加
-	r[raw.ServerType] = append(r[raw.ServerType], plat)
+	r.data[raw.ServerType] = append(r.data[raw.ServerType], plat)
 	return nil
 
 }
