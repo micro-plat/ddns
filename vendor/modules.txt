@@ -92,7 +92,7 @@ github.com/mholt/archiver
 # github.com/micro-plat/gmq v1.0.1
 github.com/micro-plat/gmq/mqtt
 github.com/micro-plat/gmq/mqtt/client
-# github.com/micro-plat/hydra v1.0.1
+# github.com/micro-plat/hydra v1.0.2
 ## explicit
 github.com/micro-plat/hydra
 github.com/micro-plat/hydra/components
