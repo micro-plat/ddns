@@ -48,6 +48,14 @@ func (r *Resolver) Lookup(net string, req *dns.Msg, onlyUseRemote bool) (message
 
 //LookupFromRemote 从远程服务器获得解析结果
 func (r *Resolver) LookupFromRemote(net string, req *dns.Msg) (message *dns.Msg, cache bool, count int, err error) {
+
+	//查询本地缓存
+	cmsg, ok := r.local.Lookup(req, false)
+	if ok {
+		return cmsg, true, 1, nil
+	}
+
+	//远程查询
 	rmsg, count, err := r.remote.Lookup(req, net)
 	if err != nil {
 		return nil, false, count, err

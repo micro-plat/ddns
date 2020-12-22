@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/micro-plat/hydra"
+	"github.com/micro-plat/lib4go/types"
 	"github.com/miekg/dns"
 )
 
@@ -47,11 +48,14 @@ func New() (*Local, error) {
 }
 
 //Lookup 根据域名查询
-func (l *Local) Lookup(req *dns.Msg) (*dns.Msg, bool) {
+func (l *Local) Lookup(req *dns.Msg, useCache ...bool) (*dns.Msg, bool) {
 	//从本地缓存获取
 	domain := TrimDomain(req.Question[0].Name)
-	if msg, ok := l.c.Lookup(domain, req); ok {
-		return msg, ok
+	ucache := types.GetBoolByIndex(useCache, 0, true)
+	if ucache {
+		if msg, ok := l.c.Lookup(domain, req); ok {
+			return msg, ok
+		}
 	}
 	ips, ok := l.r.Lookup(domain)
 	if !ok {
