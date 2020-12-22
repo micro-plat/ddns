@@ -97,7 +97,6 @@ func (r *Registry) Lookup(domain string) ([]net.IP, bool) {
 func (r *Registry) GetDomainDetails() map[string][]*Plat {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	fmt.Println("details:", r.domainDetails.Count())
 	return r.plats
 }
 
@@ -193,7 +192,6 @@ func (r *Registry) load() error {
 						return
 					case <-notify:
 						//获取所有IP列表
-						fmt.Println("notify:", d)
 						if err := r.loadIP(d); err != nil {
 							r.log.Error(err)
 						}
@@ -257,7 +255,6 @@ func (r *Registry) loadDetail(domain string) error {
 	//拉取每个IP对应的值
 	list := make([][]byte, 0, len(ips))
 	for _, ip := range ips {
-		fmt.Println("loadDetail:", registry.Join(path, ip))
 		buff, _, err := r.r.GetValue(registry.Join(path, ip))
 		if err != nil {
 			return err
@@ -265,7 +262,6 @@ func (r *Registry) loadDetail(domain string) error {
 		list = append(list, buff)
 	}
 	//保存到域名列表
-	fmt.Println("loadDetail.Set:", domain)
 	r.domainDetails.Set(domain, list)
 
 	//通过延迟加载的方式更新平台分组数据
