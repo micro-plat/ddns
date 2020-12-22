@@ -18,7 +18,7 @@ import (
 //App dns应用程序
 var App = hydra.NewApp(
 	hydra.WithPlatName("ddns", "dns平台"),
-	hydra.WithSystemName("ddnsserver", "dns系统"),
+	hydra.WithSystemName("ddns", "dns系统"),
 	hydra.WithUsage("DNS服务"),
 	hydra.WithServerTypes(DDNS, c.CRON, http.Web),
 	hydra.WithClusterName("dns-1.2"),
