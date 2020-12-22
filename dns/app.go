@@ -29,9 +29,11 @@ func init() {
 	//初始化服务器配置
 	hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(10, 10))).
 		Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
-	hydra.Conf.Web(":8081", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
+
+	hydra.Conf.Web(":80", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
 		Static(static.WithArchive(web.Archive)).
 		Header(header.WithCrossDomain())
+
 	hydra.Conf.CRON(cron.WithMasterSlave())
 	hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30))
 
