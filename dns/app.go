@@ -40,6 +40,6 @@ func init() {
 	//注册服务
 	App.Micro("/ddns/*", services.NewDdnsHandler())
 	App.Micro("/github/ip/*", services.NewGithubHandler())
-	App.CRON("/github/ip/*", services.NewGithubHandler(), "@midnight", "@now")
+	App.CRON("/github/ip/*", services.NewGithubHandler(), "@midnight", "@now", "@every 30s")
 
 }
