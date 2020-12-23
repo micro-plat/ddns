@@ -107,7 +107,9 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 			}
 			//所有任务已执行完成
 			if atomic.AddInt32(&count, 1) == int32(len(names)) {
-				response <- res
+				if !isClose {
+					response <- res
+				}
 				stop()
 			}
 		}(host, context.Current().Log())
