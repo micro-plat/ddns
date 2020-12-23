@@ -98,12 +98,10 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 			if err != nil { //发生错误
 				errList = append(errList, err)
 			} else {
-				// if len(res.Answer) > 0 { //有正确的响应
 				if !isClose {
 					response <- res
 				}
 				stop()
-				// }
 			}
 			//所有任务已执行完成
 			if atomic.AddInt32(&count, 1) == int32(len(names)) {
@@ -154,7 +152,7 @@ func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log l
 	//异步更新rtt
 	go r.names.UpdateRTT(nameserver, time.Since(start))
 	if res != nil {
-		if res.Rcode != dns.RcodeSuccess {
+		if res.Rcode != dns.RcodeServerFailure {
 			return nil, fmt.Errorf("请求失败:%d %s", res.Rcode, dns.RcodeToString[res.Rcode])
 		}
 	}
