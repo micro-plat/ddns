@@ -64,9 +64,8 @@ func (r *Resolver) LookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	//数据正确则保存到缓存
 	if len(rmsg.Answer) > 0 {
 		r.local.Save2Cache(rmsg)
-		return rmsg, false, count, nil
 	}
-	return nil, false, count + 1, fmt.Errorf("未获取到解析结果")
+	return rmsg, false, count, nil
 }
 
 //LookupFromCacheAndRemote 从缓存和远程
