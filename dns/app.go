@@ -27,7 +27,7 @@ var App = hydra.NewApp(
 func init() {
 
 	//初始化服务器配置
-	hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(10, 10))).
+	hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(10, 10), conf.WithOnlyUseRemote())).
 		Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
 
 	hydra.Conf.Web(":80", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
@@ -35,7 +35,7 @@ func init() {
 		Header(header.WithCrossDomain())
 
 	hydra.Conf.CRON(cron.WithMasterSlave())
-	hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30))
+	hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30), vchttp.WithConnTimeout(30))
 
 	//注册服务
 	App.Micro("/ddns/*", services.NewDdnsHandler())
