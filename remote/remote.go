@@ -98,16 +98,16 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 			if err != nil { //发生错误
 				errList = append(errList, err)
 			} else {
-				if res != nil { //有正确的响应
+				if len(res.Answer) > 0 { //有正确的响应
 					if !isClose {
 						response <- res
 					}
-
 					stop()
 				}
 			}
 			//所有任务已执行完成
 			if atomic.AddInt32(&count, 1) == int32(len(names)) {
+				response <- res
 				stop()
 			}
 		}(host, context.Current().Log())
@@ -159,10 +159,7 @@ func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log l
 			return nil, fmt.Errorf("请求失败:%d %s", res.Rcode, dns.RcodeToString[res.Rcode])
 		}
 	}
-	if len(res.Answer) > 0 {
-		return res, nil
-	}
-	return nil, nil
+	return res, nil
 }
 
 //如果被解析的地址就是本地ip  那么就直接返回本机ip作为解析结果
