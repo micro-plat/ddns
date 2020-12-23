@@ -151,9 +151,10 @@ func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log l
 	if err != nil {
 		return nil, err
 	}
-
-	//异步更新rtt
-	go r.names.UpdateRTT(nameserver, time.Since(start))
+	if len(res.Answer) > 0 {
+		//当存在结果时，异步更新rtt
+		go r.names.UpdateRTT(nameserver, time.Since(start))
+	}
 	if res != nil {
 		if res.Rcode == dns.RcodeServerFailure {
 			return nil, fmt.Errorf("请求失败[%s]:%d %s", nameserver, res.Rcode, dns.RcodeToString[res.Rcode])
