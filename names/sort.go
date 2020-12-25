@@ -3,6 +3,7 @@ package names
 import (
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/micro-plat/lib4go/concurrent/cmap"
@@ -13,6 +14,7 @@ type Sorter struct {
 	rtts    cmap.ConcurrentMap
 	lock    sync.RWMutex
 	closeCh chan struct{}
+	index   int32
 }
 
 func newSorter() *Sorter {
@@ -39,17 +41,24 @@ func (s *Sorter) Sort(names ...string) []string {
 		dist[v] = false
 	}
 
+	atomic.CompareAndSwapInt32(&s.index, 2<<20, 1)
+	index := atomic.AddInt32(&s.index, 1)
 	//锁定与解锁
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	//以排序好的服务器控制顺序
 	sorted := make([]string, 0, len(names))
+	current := s.sorted[int(index%int32(len(s.sorted)))]
+	sorted = append(sorted, current)
 	for _, v := range s.sorted {
-		if _, ok := dist[v]; ok {
-			sorted = append(sorted, v)
-			dist[v] = true
+		if v != current {
+			if _, ok := dist[v]; ok {
+				sorted = append(sorted, v)
+				dist[v] = true
+			}
 		}
+
 	}
 
 	//未列入排序列表的，直接加入返回列表
