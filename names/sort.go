@@ -76,7 +76,7 @@ func (s *Sorter) Sort(names ...string) []string {
 		}
 	}
 
-	//未列入排序列表的，直接加入返回列表
+	//加入未列入排序列表的DNS
 	for k, v := range dist {
 		if !v {
 			sorted = append(sorted, k)
