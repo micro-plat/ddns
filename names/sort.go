@@ -52,7 +52,7 @@ func (s *Sorter) Sort(names ...string) []string {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	//以排序好的服务器控制顺序
+	//较快的DNS优先使用
 	sorted := make([]string, 0, len(names))
 	cindex := int(index % int32(len(s.fastList)))
 	current := s.fastList[cindex]
