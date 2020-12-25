@@ -35,7 +35,7 @@ func init() {
 		Header(header.WithCrossDomain())
 
 	hydra.Conf.CRON(cron.WithMasterSlave())
-	hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30))
+	hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30), vchttp.WithConnTimeout(30))
 
 	//注册服务
 	App.Micro("/ddns/*", services.NewDdnsHandler())
