@@ -1,8 +1,6 @@
 package resolver
 
 import (
-	"fmt"
-
 	"github.com/micro-plat/ddns/local"
 	"github.com/micro-plat/ddns/remote"
 	"github.com/micro-plat/hydra"
@@ -64,9 +62,8 @@ func (r *Resolver) LookupFromRemote(net string, req *dns.Msg) (message *dns.Msg,
 	//数据正确则保存到缓存
 	if len(rmsg.Answer) > 0 {
 		r.local.Save2Cache(rmsg)
-		return rmsg, false, count, nil
 	}
-	return nil, false, count + 1, fmt.Errorf("未获取到解析结果")
+	return rmsg, false, count, nil
 }
 
 //LookupFromCacheAndRemote 从缓存和远程
@@ -94,7 +91,7 @@ func (r *Resolver) LookupFromCacheAndRemote(net string, req *dns.Msg) (message *
 	if ok {
 		return cmsg, true, count + 1, nil
 	}
-	return nil, false, count + 1, fmt.Errorf("未获取到解析结果")
+	return rmsg, false, count, nil //	return nil, false, count + 1, fmt.Errorf("未获取到解析结果")
 }
 
 //Close 关闭上游服务

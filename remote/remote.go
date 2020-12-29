@@ -98,18 +98,13 @@ func (r *Remote) lookupByNames(net string, names []string, req *dns.Msg) (chan *
 			if err != nil { //发生错误
 				errList = append(errList, err)
 			} else {
-				if len(res.Answer) > 0 { //有正确的响应
-					if !isClose {
-						response <- res
-					}
-					stop()
-				}
-			}
-			//所有任务已执行完成
-			if atomic.AddInt32(&count, 1) == int32(len(names)) {
 				if !isClose {
 					response <- res
 				}
+				stop()
+			}
+			//所有任务已执行完成
+			if atomic.AddInt32(&count, 1) == int32(len(names)) {
 				stop()
 			}
 		}(host, context.Current().Log())
@@ -139,26 +134,30 @@ loop:
 }
 
 func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log logger.ILogger) (res *dns.Msg, err error) {
+
 	log.Info("  -->exchange.request:", req.Question[0].Name, nameserver)
+	start := time.Now()
 	defer func() {
+		hasAnswer := res != nil && len(res.Answer) > 0
+		timerange := time.Since(start)
 		if err != nil {
-			log.Error("  -->exchange.response:", req.Question[0].Name, nameserver, "err:", err)
+			log.Error("  -->exchange.response:", hasAnswer, timerange, req.Question[0].Name, nameserver, "err:", err)
 			return
 		}
-		log.Info("  -->exchange.response:", req.Question[0].Name, nameserver, "OK")
+		log.Info("  -->exchange.response:", hasAnswer, timerange, req.Question[0].Name, nameserver, "OK")
 
 	}()
-	start := time.Now()
 	res, err = dns.Exchange(req, nameserver)
 	if err != nil {
 		return nil, err
 	}
-
-	//异步更新rtt
-	go r.names.UpdateRTT(nameserver, time.Since(start))
+	if len(res.Answer) > 0 {
+		//当存在结果时，异步更新rtt
+		go r.names.UpdateRTT(nameserver, time.Since(start))
+	}
 	if res != nil {
-		if res.Rcode != dns.RcodeSuccess {
-			return nil, fmt.Errorf("请求失败:%d %s", res.Rcode, dns.RcodeToString[res.Rcode])
+		if res.Rcode == dns.RcodeServerFailure {
+			return nil, fmt.Errorf("请求失败[%s]:%d %s", nameserver, res.Rcode, dns.RcodeToString[res.Rcode])
 		}
 	}
 	return res, nil
