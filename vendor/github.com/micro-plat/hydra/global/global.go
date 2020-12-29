@@ -1,8 +1,10 @@
 package global
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -50,9 +52,6 @@ type global struct {
 
 	//ClusterName 集群名称
 	ClusterName string
-
-	//Name 服务器请求名称
-	Name string
 
 	//DNSRoot DNS根节点
 	DNSRoot string
@@ -186,12 +185,14 @@ func parsePath(p string) (platName string, systemName string, serverTypes []stri
 	clusterName = fs[3]
 	return
 }
+func (m *global) IsDebug() bool {
+	return IsDebug
+}
 
 //check 检查参数
 func (m *global) check() (err error) {
 
 	m.RegistryAddr = types.GetString(FlagVal.RegistryAddr, m.RegistryAddr)
-	m.Name = types.GetString(FlagVal.Name, m.Name)
 	m.PlatName = types.GetString(FlagVal.PlatName, m.PlatName)
 	m.SysName = types.GetString(FlagVal.SysName, m.SysName)
 	m.ServerTypeNames = types.GetString(FlagVal.ServerTypeNames, m.ServerTypeNames)
@@ -202,12 +203,6 @@ func (m *global) check() (err error) {
 
 	if m.ServerTypeNames != "" {
 		m.ServerTypes = strings.Split(strings.ToLower(m.ServerTypeNames), "-")
-	}
-	if m.Name != "" {
-		m.PlatName, m.SysName, m.ServerTypes, m.ClusterName, err = parsePath(m.Name)
-		if err != nil {
-			return err
-		}
 	}
 	for _, s := range m.ServerTypes {
 		if !types.StringContains(ServerTypes, s) {
@@ -233,4 +228,23 @@ func (m *global) check() (err error) {
 	}
 	isReady = true
 	return nil
+}
+
+func GetExePath() (string, error) {
+	file, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+	path, err := filepath.Abs(file)
+	if err != nil {
+		return "", err
+	}
+	i := strings.LastIndex(path, "/")
+	if i < 0 {
+		i = strings.LastIndex(path, "\\")
+	}
+	if i < 0 {
+		return "", errors.New(`error: Can't find "/" or "\".`)
+	}
+	return string(path[0 : i+1]), nil
 }

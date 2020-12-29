@@ -31,7 +31,7 @@ func init() {
 		Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
 
 	hydra.Conf.Web(":80", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
-		Static(static.WithArchive(web.Archive)).
+		Static(static.WithArchiveByEmbed(web.EmbedArchive, web.EmbedExt)).
 		Header(header.WithCrossDomain())
 
 	hydra.Conf.CRON(cron.WithMasterSlave())

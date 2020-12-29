@@ -16,6 +16,9 @@ import (
 //TempDirName 临时目录创建名
 const TempDirName = "hydra"
 
+//TempArchiveName 临时压缩文件创建名
+const TempArchiveName = "hydra*"
+
 //TypeNodeName static分类节点名
 const TypeNodeName = "static"
 
@@ -26,15 +29,16 @@ type IStatic interface {
 
 //Static 设置静态文件配置
 type Static struct {
-	Dir       string              `json:"dir,omitempty" valid:"ascii" toml:"dir,omitempty"`
-	Archive   string              `json:"archive,omitempty" valid:"ascii" toml:"archive,omitempty"`
-	Prefix    string              `json:"prefix,omitempty" valid:"ascii" toml:"prefix,omitempty"`
-	Exts      []string            `json:"exts,omitempty" valid:"ascii" toml:"exts,omitempty"`
-	Exclude   []string            `json:"exclude,omitempty" valid:"ascii" toml:"exclude,omitempty"`
-	HomePage  string              `json:"homePage ,omitempty" valid:"ascii" toml:"homePage,omitempty"`
-	Rewriters []string            `json:"rewriters,omitempty" valid:"ascii" toml:"rewriters,omitempty"`
-	Disable   bool                `json:"disable,omitempty" toml:"disable,omitempty"`
-	FileMap   map[string]FileInfo `json:"-"`
+	Dir            string              `json:"dir,omitempty" valid:"ascii" toml:"dir,omitempty"`
+	Archive        string              `json:"archive,omitempty" valid:"ascii" toml:"archive,omitempty"`
+	Prefix         string              `json:"prefix,omitempty" valid:"ascii" toml:"prefix,omitempty"`
+	Exts           []string            `json:"exts,omitempty" valid:"ascii" toml:"exts,omitempty"`
+	Exclude        []string            `json:"exclude,omitempty" valid:"ascii" toml:"exclude,omitempty"`
+	HomePage       string              `json:"homePage ,omitempty" valid:"ascii" toml:"homePage,omitempty"`
+	Rewriters      []string            `json:"rewriters,omitempty" valid:"ascii" toml:"rewriters,omitempty"`
+	Disable        bool                `json:"disable,omitempty" toml:"disable,omitempty"`
+	FileMap        map[string]FileInfo `json:"-"`
+	RewritersMatch *conf.PathMatch     `json:"-"`
 }
 
 //FileInfo 压缩文件保存
@@ -73,6 +77,18 @@ func GetConf(cnf conf.IServerConf) (*Static, error) {
 	if static.Exts == nil {
 		static.Exts = []string{}
 	}
+
+	//处理嵌入档案文件
+	if static.Archive == embedArchiveTag {
+		archivePath, err := saveArchive()
+		if err != nil {
+			return nil, err
+		}
+		static.Archive = archivePath
+		defer removeArchive(archivePath) //移除archive
+	}
+
+	//验证配置信息
 	if b, err := govalidator.ValidateStruct(static); !b {
 		return nil, fmt.Errorf("static配置数据有误:%v", err)
 	}
@@ -81,6 +97,7 @@ func GetConf(cnf conf.IServerConf) (*Static, error) {
 		return nil, fmt.Errorf("%s获取失败:%v", static.Archive, err)
 	}
 	static.RereshData()
+	static.RewritersMatch = conf.NewPathMatch(static.Rewriters...)
 	return static, nil
 }
 

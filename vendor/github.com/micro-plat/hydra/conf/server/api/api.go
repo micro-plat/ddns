@@ -9,27 +9,29 @@ import (
 	"github.com/micro-plat/hydra/conf"
 )
 
-//DefaultAPIAddress api服务默认端口号
-const DefaultAPIAddress = ":8080"
-
-//DefaultWSAddress ws服务默认端口号
-const DefaultWSAddress = ":8070"
-
-//DefaultWEBAddress web服务默认端口号
-const DefaultWEBAddress = ":8089"
-
-//DefaultRTimeOut 默认读取超时时间
-const DefaultRTimeOut = 30
-
-//DefaultWTimeOut 默认写超时时间
-const DefaultWTimeOut = 30
-
-//DefaultRHTimeOut 默认头读取超时时间
-const DefaultRHTimeOut = 30
-
 const (
+
+	//DefaultAPIAddress api服务默认端口号
+	DefaultAPIAddress = "8080"
+
+	//DefaultWSAddress ws服务默认端口号
+	DefaultWSAddress = "8070"
+
+	//DefaultWEBAddress web服务默认端口号
+	DefaultWEBAddress = "8089"
+
+	//DefaultRTimeOut 默认读取超时时间
+	DefaultRTimeOut = 30
+
+	//DefaultWTimeOut 默认写超时时间
+	DefaultWTimeOut = 30
+
+	//DefaultRHTimeOut 默认头读取超时时间
+	DefaultRHTimeOut = 30
+
 	//StartStatus 开启服务
 	StartStatus = "start"
+
 	//StartStop 停止服务
 	StartStop = "stop"
 )
@@ -43,21 +45,24 @@ var validTypes = map[string]bool{"api": true, "web": true, "ws": true}
 
 //Server api server配置信息
 type Server struct {
-	Address   string `json:"address,omitempty" toml:"address,omitempty"`
-	Status    string `json:"status,omitempty" valid:"in(start|stop)" toml:"status,omitempty"`
-	RTimeout  int    `json:"rTimeout,omitempty" toml:"rTimeout,omitzero"`
-	WTimeout  int    `json:"wTimeout,omitempty" toml:"wTimeout,omitzero"`
-	RHTimeout int    `json:"rhTimeout,omitempty" toml:"rhTimeout,omitzero"`
-	Host      string `json:"host,omitempty" toml:"host,omitempty"`
-	Domain    string `json:"dn,omitempty" toml:"dn,omitempty"`
+	Address   string `json:"address,omitempty" valid:"port,required" label:"端口号|请输入正确的端口号(1-65535)"`
+	Status    string `json:"status,omitempty" valid:"in(start|stop)"  label:"服务器状态"`
+	RTimeout  int    `json:"rTimeout,omitempty" valid:"range(3|3600)"`
+	WTimeout  int    `json:"wTimeout,omitempty" valid:"range(3|3600)"`
+	RHTimeout int    `json:"rhTimeout,omitempty" valid:"range(3|3600)"`
+	Domain    string `json:"dns,omitempty" valid:"dns" toml:"dns,omitempty" label:"域名"`
+	Name      string `json:"name,omitempty" toml:"name,omitempty" label:"服务器名称"`
 	Trace     bool   `json:"trace,omitempty" toml:"trace,omitempty"`
 }
 
 //New 构建api server配置信息
 func New(address string, opts ...Option) *Server {
 	a := &Server{
-		Address: address,
-		Status:  StartStatus,
+		Address:   address,
+		Status:    StartStatus,
+		RTimeout:  DefaultRTimeOut,
+		WTimeout:  DefaultWTimeOut,
+		RHTimeout: DefaultRHTimeOut,
 	}
 	for _, opt := range opts {
 		opt(a)

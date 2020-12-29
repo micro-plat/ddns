@@ -2,6 +2,10 @@ module github.com/micro-plat/ddns
 
 go 1.15
 
+replace github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra
+
+replace github.com/micro-plat/lib4go => ../../../github.com/micro-plat/lib4go
+
 require (
 	github.com/PuerkitoBio/goquery v1.6.0
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef
