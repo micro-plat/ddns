@@ -51,8 +51,13 @@ func NewFileSystem(rootDir string) (*fs, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	rootDir = strings.TrimRight(rootDir, "/")
+	if strings.HasPrefix(rootDir, "./") {
+		rootDir = rootDir[2:]
+	}
 	registryfs := &fs{
-		rootDir:             strings.Trim(strings.TrimRight(rootDir, "/"), "./"),
+		rootDir:             rootDir,
 		watcher:             w,
 		valueWatcherMaps:    make(map[string]*fsValueWatcher),
 		childrenWatcherMaps: make(map[string]*fsChildrenWatcher),
@@ -68,7 +73,7 @@ func (l *fs) Start() {
 		for {
 			select {
 			case <-l.closeCh:
-				l.watcher.Close() 
+				l.watcher.Close()
 				return
 			case event := <-l.watcher.Events:
 				if l.done {
@@ -303,7 +308,6 @@ func (l *fs) WatchChildren(path string) (data chan registry.ChildrenWatcher, err
 					}
 					if len(path) > 0 {
 						vals, version, err := l.GetChildren(rpath)
-						//fmt.Println("child.send.notify:", vals, version, err, l.exposePath(rpath))
 						ett := &valuesEntity{
 							path:    l.exposePath(rpath),
 							values:  vals,

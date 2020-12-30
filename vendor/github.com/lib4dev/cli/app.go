@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/lib4dev/cli/cmds"
-	"github.com/lib4dev/cli/logs"
+	logs "github.com/lib4dev/cli/logger"
 	"github.com/urfave/cli"
 )
 

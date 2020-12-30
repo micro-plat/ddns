@@ -29,14 +29,19 @@ const (
 	ModeSHA1 = "SHA1"
 	//ModeSHA256 SHA256加密模式
 	ModeSHA256 = "SHA256"
+
+	//ModeSRVC 服务service模式
+	ModeSRVC = "SRVC"
 )
 
 //APIKeyAuth 创建固定密钥验证服务
 type APIKeyAuth struct {
-	Secret   string   `json:"secret,omitempty" valid:"ascii,required" toml:"secret,omitempty"`
-	Mode     string   `json:"mode,omitempty" valid:"in(MD5|SHA1|SHA256),required" toml:"mode,omitempty"`
-	Excludes []string `json:"excludes,omitempty" toml:"excludes,omitempty"` //排除不验证的路径
-	Disable  bool     `json:"disable,omitempty" toml:"disable,omitempty"`
+	Secret   string        `json:"secret,omitempty" valid:"ascii,required,stringlength(8|64)" toml:"secret,omitempty" label:"密钥验证服务secret"`
+	Mode     string        `json:"mode,omitempty" valid:"in(MD5|SHA1|SHA256|SVS|SRVC),required" toml:"mode,omitempty" label:"密钥验证服务模式"`
+	Excludes []string      `json:"excludes,omitempty" toml:"excludes,omitempty"` //排除不验证的路径
+	Disable  bool          `json:"disable,omitempty" toml:"disable,omitempty"`
+	Invoker  string        `json:"invoker,omitempty" toml:"invoker,omitempty"`
+	invoker  *conf.Invoker `json:"-"`
 	*conf.PathMatch
 }
 
@@ -51,11 +56,21 @@ func New(secret string, opts ...Option) *APIKeyAuth {
 		opt(f)
 	}
 	f.PathMatch = conf.NewPathMatch(f.Excludes...)
+	f.invoker = conf.NewInvoker(f.Invoker)
+	if f.invoker.Allow() {
+		f.Mode = ModeSRVC
+	}
 	return f
 }
 
 //Verify 验证签名是否通过
-func (a *APIKeyAuth) Verify(raw string, sign string) error {
+func (a *APIKeyAuth) Verify(raw string, sign string, invoke conf.FnInvoker) error {
+	//检查并执行本地服务调用
+	if ok, _, err := a.invoker.CheckAndInvoke(invoke); ok {
+		return err
+	}
+
+	//根据配置进行签名验证
 	var expect string
 	switch strings.ToUpper(a.Mode) {
 	case ModeMD5:
@@ -76,19 +91,24 @@ func (a *APIKeyAuth) Verify(raw string, sign string) error {
 
 //GetConf 获取APIKeyAuth
 func GetConf(cnf conf.IServerConf) (*APIKeyAuth, error) {
-	fsa := APIKeyAuth{}
-	_, err := cnf.GetSubObject(registry.Join(ParNodeName, SubNodeName), &fsa)
+	f := APIKeyAuth{}
+	_, err := cnf.GetSubObject(registry.Join(ParNodeName, SubNodeName), &f)
 	if err == conf.ErrNoSetting {
 		return &APIKeyAuth{Disable: true, PathMatch: conf.NewPathMatch()}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("apikey配置格式有误:%v", err)
 	}
-	if b, err := govalidator.ValidateStruct(&fsa); !b {
+	f.invoker = conf.NewInvoker(f.Invoker)
+	if f.invoker.Allow() {
+		f.Mode = ModeSRVC
+	}
+	if b, err := govalidator.ValidateStruct(&f); !b {
 		return nil, fmt.Errorf("apikey配置数据有误:%v", err)
 	}
-	fsa.PathMatch = conf.NewPathMatch(fsa.Excludes...)
-	return &fsa, nil
+	f.PathMatch = conf.NewPathMatch(f.Excludes...)
+
+	return &f, nil
 }
 
 //CreateSecret 创建Secret

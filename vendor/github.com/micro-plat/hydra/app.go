@@ -12,11 +12,11 @@ import (
 
 	_ "github.com/micro-plat/hydra/hydra/cmds/conf"
 	_ "github.com/micro-plat/hydra/hydra/cmds/install"
-	"github.com/micro-plat/hydra/hydra/cmds/pkgs/service"
 	_ "github.com/micro-plat/hydra/hydra/cmds/remove"
 	_ "github.com/micro-plat/hydra/hydra/cmds/run"
 	_ "github.com/micro-plat/hydra/hydra/cmds/update"
 
+	_ "github.com/micro-plat/hydra/hydra/cmds/db"
 	_ "github.com/micro-plat/hydra/hydra/cmds/start"
 	_ "github.com/micro-plat/hydra/hydra/cmds/status"
 	_ "github.com/micro-plat/hydra/hydra/cmds/stop"
@@ -31,14 +31,12 @@ import (
 type MicroApp struct {
 	app *cli.App
 	services.IService
-	Cli *ucli
 }
 
 //NewApp 创建微服务应用
 func NewApp(opts ...Option) (m *MicroApp) {
 	m = &MicroApp{
 		IService: services.Def,
-		Cli:      newUCli(),
 	}
 	for _, opt := range opts {
 		opt()
@@ -55,9 +53,6 @@ func (m *MicroApp) Start() {
 
 //Close 关闭服务器
 func (m *MicroApp) Close() {
-	if s, ok := m.app.Metadata["app"].(service.Service); ok {
-		s.Stop()
-	}
 	Close()
 }
 

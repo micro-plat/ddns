@@ -1,7 +1,6 @@
 package global
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/urfave/cli"
@@ -13,11 +12,22 @@ var RunCli = newCli("run")
 //ConfCli 配置处理相关的终端参数
 var ConfCli = newCli("conf")
 
-var clis = make([]*ucli, 0, 1)
+//DBCli 配置处理相关的终端参数
+var DBCli = newCli("db")
+
+//InstallCli 配置处理相关的终端参数
+var InstallCli = newCli("install")
+
+//ICustomCli 用户可用的cli操作函数
+type ICustomCli interface {
+	AddFlags(opts ...FlagOption) error
+	OnStarting(callback func(ICli) error)
+}
+
+var clis = make(map[string]*ucli)
 
 type CliFlagObject struct {
 	RegistryAddr    string
-	Name            string
 	PlatName        string
 	SysName         string
 	ServerTypeNames string
@@ -58,31 +68,10 @@ func (c *ucli) hasFlag(name string) bool {
 }
 
 //AddFlag 添加命令行参数
-func (c *ucli) AddFlag(name string, usage string) error {
-	if c.hasFlag(name) {
-		return fmt.Errorf("flag名称%s已存在", name)
+func (c *ucli) AddFlags(opts ...FlagOption) error {
+	for _, opt := range opts {
+		opt(c)
 	}
-
-	flag := cli.StringFlag{
-		Name:  name,
-		Usage: usage,
-	}
-	c.flags = append(c.flags, flag)
-	c.flagNames[name] = true
-	return nil
-}
-
-//AddSliceFlag 添加命令行参数
-func (c *ucli) AddSliceFlag(name string, usage string) error {
-	if c.hasFlag(name) {
-		return fmt.Errorf("flag名称%s已存在", name)
-	}
-	flag := cli.StringSliceFlag{
-		Name:  name,
-		Usage: usage,
-	}
-	c.flags = append(c.flags, flag)
-	c.flagNames[name] = true
 	return nil
 }
 
@@ -124,6 +113,24 @@ func doCliCallback(c *cli.Context) error {
 }
 
 func init() {
-	clis = append(clis, RunCli)
-	clis = append(clis, ConfCli)
+	clis[RunCli.Name] = RunCli
+	clis[ConfCli.Name] = ConfCli
+	clis[DBCli.Name] = DBCli
+	clis[InstallCli.Name] = InstallCli
+}
+
+//GetFlags 获取当前命令对应的参数
+func GetFlags(name string) []cli.Flag {
+	if fs, ok := clis[name]; ok {
+		return fs.GetFlags()
+	}
+	return nil
+}
+
+//GetCli 获取当前命令对应cli
+func GetCli(name string) *ucli {
+	if fs, ok := clis[name]; ok {
+		return fs
+	}
+	return nil
 }

@@ -6,13 +6,15 @@ import (
 )
 
 const (
-	ProtoZK    = "zk"
-	ProtoRPC   = "rpc"
-	ProtoHTTP  = "http"
-	ProtoLM    = "lm"
-	ProtoFS    = "fs"
-	ProtoLMQ   = "lmq"
-	ProtoREDIS = "redis"
+	ProtoZK      = "zk"
+	ProtoRPC     = "rpc"
+	ProtoHTTP    = "http"
+	ProtoLM      = "lm"
+	ProtoFS      = "fs"
+	ProtoLMQ     = "lmq"
+	ProtoREDIS   = "redis"
+	ProtoMQTT    = "mqtt"
+	ProtoInvoker = "ivk"
 )
 
 //ParseProto 解析协议信息
@@ -35,9 +37,14 @@ func ParseProto(address string) (string, string, error) {
 }
 
 //IsProto 是否是指定的协议
-func IsProto(addr string, proto string) (string, bool) {
-	p, addrs, _ := ParseProto(addr)
-	return addrs, p == proto
+func IsProto(addr string, proto ...string) (string, bool) {
+	for _, prt := range proto {
+		p, addrs, _ := ParseProto(addr)
+		if p == prt {
+			return addrs, true
+		}
+	}
+	return "", false
 }
 
 //IsLocal 是否是本地服务
