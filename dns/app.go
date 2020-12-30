@@ -30,7 +30,7 @@ func init() {
 	hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(5, 5))).
 		Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
 
-	hydra.Conf.Web(":80", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
+	hydra.Conf.Web(":80", api.WithTimeout(120, 120), api.WithDNS("ddns.com")).
 		Static(static.WithArchive(web.Archive)).
 		Header(header.WithCrossDomain())
 

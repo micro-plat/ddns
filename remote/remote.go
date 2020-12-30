@@ -139,12 +139,17 @@ func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log l
 	start := time.Now()
 	defer func() {
 		hasAnswer := res != nil && len(res.Answer) > 0
+
 		timerange := time.Since(start)
 		if err != nil {
 			log.Error("  -->exchange.response:", hasAnswer, timerange, req.Question[0].Name, nameserver, "err:", err)
 			return
 		}
-		log.Info("  -->exchange.response:", hasAnswer, timerange, req.Question[0].Name, nameserver, "OK")
+		rcode := 999
+		if res != nil {
+			rcode = res.Rcode
+		}
+		log.Info("  -->exchange.response:", hasAnswer, timerange, req.Question[0].Name, nameserver, "OK", rcode)
 
 	}()
 	res, err = dns.Exchange(req, nameserver)
