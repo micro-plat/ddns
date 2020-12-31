@@ -2,3 +2,4 @@
 *ddns
 *.test
 # conf/
+node_modules

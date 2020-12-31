@@ -1,0 +1,10 @@
+.el-submenu__title {
+    font-size: 16px !important;
+  }
+
+  .el-menu-vertical-demo > .el-submenu > .el-menu > .is-active {
+    border-left: 6px solid;
+    background-color: #fff !important;
+    height: 45px;
+    line-height: 45px;
+  }

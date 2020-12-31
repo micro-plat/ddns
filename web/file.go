@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"path"
 )
 
@@ -14,6 +13,5 @@ func init() {
 	for _, v := range AssetNames() {
 		EmbedExt = path.Ext(v)
 		EmbedArchive, _ = Asset(v)
-		fmt.Println("EmbedArchive:", len(EmbedArchive), EmbedExt)
 	}
 }

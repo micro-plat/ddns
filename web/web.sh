@@ -1,1 +1,1 @@
-go-bindata -o=./web/static.go -pkg=web static.zip
+go-bindata -o=./static.go -pkg=web static.zip
