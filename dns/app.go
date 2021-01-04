@@ -3,12 +3,10 @@ package dns
 import (
 	"github.com/micro-plat/ddns/conf"
 	"github.com/micro-plat/ddns/services"
-	"github.com/micro-plat/ddns/web"
 	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/conf/server/api"
 	"github.com/micro-plat/hydra/conf/server/cron"
 	"github.com/micro-plat/hydra/conf/server/header"
-	"github.com/micro-plat/hydra/conf/server/static"
 	"github.com/micro-plat/hydra/hydra/servers/http"
 
 	vchttp "github.com/micro-plat/hydra/conf/vars/http"
@@ -25,21 +23,20 @@ var App = hydra.NewApp(
 )
 
 func init() {
+	hydra.OnReadyByInsert(func() {
+		//初始化服务器配置
+		hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(5, 5))).
+			Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
 
-	//初始化服务器配置
-	hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(5, 5))).
-		Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
+		hydra.Conf.Web(":80", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
+			Header(header.WithCrossDomain())
 
-	hydra.Conf.Web(":80", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
-		Static(static.WithArchiveByEmbed(web.EmbedArchive, web.EmbedExt)).
-		Header(header.WithCrossDomain())
+		hydra.Conf.CRON(cron.WithMasterSlave())
+		hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30), vchttp.WithConnTimeout(30))
 
-	hydra.Conf.CRON(cron.WithMasterSlave())
-	hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30), vchttp.WithConnTimeout(30))
-
-	//注册服务
-	App.Micro("/ddns/*", services.NewDdnsHandler())
-	App.Micro("/github/ip/*", services.NewGithubHandler())
-	App.CRON("/github/ip/*", services.NewGithubHandler(), "@midnight", "@now")
-
+		//注册服务
+		App.Micro("/ddns/*", services.NewDdnsHandler())
+		App.Micro("/github/ip/*", services.NewGithubHandler())
+		App.CRON("/github/ip/*", services.NewGithubHandler(), "@midnight", "@now")
+	})
 }

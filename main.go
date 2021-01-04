@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/micro-plat/ddns/dns"
+	_ "github.com/micro-plat/ddns/web"
 	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/global/compatible"
 	"github.com/micro-plat/lib4go/logger"
