@@ -12,7 +12,7 @@ cd ../../../
 go-bindata -o=./static.go -pkg=web static.zip
 sleep 1s
 
-echo "4. 写入静态文件配置内容到web/static.web.go" 
+echo "4. 写入静态文件配置内容到web/web.go" 
 echo '
 package web
 
@@ -32,7 +32,7 @@ func init() {
 		}
 	})
 }
-' > ./static.web.go
+' > ./web.go
 
 echo "4. 删除打包文件和压缩文件" 
 rm -rf ddnsweb/dist/
