@@ -3,3 +3,5 @@
 *.test
 # conf/
 node_modules
+web/web.go
+web/static.go
