@@ -17,3 +17,7 @@ require (
 	golang.org/x/sys v0.0.0-20201221093633-bc327ba9c2f0
 	gopkg.in/fsnotify.v1 v1.4.7
 )
+
+replace github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra
+
+replace github.com/micro-plat/lib4go => ../../../github.com/micro-plat/lib4go
