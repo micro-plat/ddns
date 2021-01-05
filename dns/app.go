@@ -23,7 +23,7 @@ var App = hydra.NewApp(
 )
 
 func init() {
-	hydra.OnReadyByInsert(func() {
+	hydra.OnReadying(func() {
 		//初始化服务器配置
 		hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(5, 5))).
 			Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))

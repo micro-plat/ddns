@@ -7,4 +7,3 @@ web/static.go
 web/web.go
 out/
 logs/
-conf/
