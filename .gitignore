@@ -7,3 +7,5 @@ web/static.go
 web/web.go
 out/
 logs/
+static.go
+static.web.go

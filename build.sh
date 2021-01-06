@@ -13,12 +13,17 @@ zip -q -r ../../../static.zip *
 
 echo "4. 生成资源文件:web/static.go" 
 cd ../../../
-go-bindata -o=./static.go -pkg=web static.zip
+go-bindata -o=../static.go -pkg=main static.zip
 sleep 1s
 
-echo "5. 写入静态文件配置内容到web/web.go" 
+echo "4. 删除打包文件和压缩文件" 
+rm -rf ddnsweb/dist/
+rm -rf static.zip
+cd ..
+
+echo "5. 写入静态文件配置内容到static.web.go" 
 echo '
-package web
+package main
 
 import (
 	"path"
@@ -36,13 +41,7 @@ func init() {
 		}
 	})
 }
-' > ./web.go
-
-echo "5. 删除打包文件和压缩文件" 
-rm -rf ddnsweb/dist/
-rm -rf static.zip
-cd ..
-
+' > ./static.web.go
 
 echo "6. 编译项目"
 go build  -o out/ddnsserver
