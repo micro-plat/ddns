@@ -1,18 +1,22 @@
 cd web/ddnsweb
 
-echo "1. 打包项目：npm run build"
+
+echo "1. 安装依赖：npm install"
+npm  install
+
+echo "2. 打包项目：npm run build"
 npm run build
 
-echo "2. 压缩：dist/static"
+echo "3. 压缩：dist/static"
 cd dist/static
 zip -q -r ../../../static.zip *
 
-echo "3. 生成资源文件:web/static.go" 
+echo "4. 生成资源文件:web/static.go" 
 cd ../../../
 go-bindata -o=./static.go -pkg=web static.zip
 sleep 1s
 
-echo "4. 写入静态文件配置内容到web/web.go" 
+echo "5. 写入静态文件配置内容到web/web.go" 
 echo '
 package web
 
@@ -34,13 +38,13 @@ func init() {
 }
 ' > ./web.go
 
-echo "4. 删除打包文件和压缩文件" 
+echo "5. 删除打包文件和压缩文件" 
 rm -rf ddnsweb/dist/
 rm -rf static.zip
 cd ..
 
 
-echo "5. 编译项目"
+echo "6. 编译项目"
 go build  -o out/ddnsserver
 
 echo ""
