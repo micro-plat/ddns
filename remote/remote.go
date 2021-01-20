@@ -161,6 +161,10 @@ func (r *Remote) singleLookup(net string, nameserver string, req *dns.Msg, log l
 		go r.names.UpdateRTT(nameserver, time.Since(start))
 	}
 	if res != nil {
+		if len(res.Answer) == 1 && strings.Contains(res.Answer[0].String(), "CNAME") {
+			return nil, fmt.Errorf("请求失败,结果只有别名解析,没有ip信息:[%s-%s]", nameserver, res.Answer[0].String())
+		}
+
 		if res.Rcode == dns.RcodeServerFailure {
 			return nil, fmt.Errorf("请求失败[%s]:%d %s", nameserver, res.Rcode, dns.RcodeToString[res.Rcode])
 		}
