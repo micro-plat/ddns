@@ -15,10 +15,14 @@ npm run build
 
 echo "3. 压缩：dist/static"
 cd  $rootdir/web/ddnsweb/dist/static
+rm -f $rootdir/$asset_name
+
 zip -q -r $rootdir/$asset_name *
 
 
 echo "5. 写入静态文件配置内容到assets.web.go"  
+
+rm -f $rootdir/assets.web.go
 
 echo "
 //+build !none
@@ -41,7 +45,7 @@ var archiveName = \"${asset_name}\"
 func init() {
 	hydra.OnReady(func() {
 		staticOpts:= []static.Option{}
-		staticOpts = append(staticOpts, static.WithEmbedBytes(archiveName, archiveBytes))
+		staticOpts = append(staticOpts,static.WithAutoRewrite(), static.WithEmbedBytes(archiveName, archiveBytes))
 		serverStatic := hydra.Conf.GetWeb().Static(staticOpts...)
 		if global.Def.IsDebug() {
 			serverStatic.Header(header.WithCrossDomain())
@@ -65,12 +69,14 @@ fi
 
 mkdir -p $rootdir/out
 
+cd $rootdir
+
 echo "go build $buildtags -o $rootdir/out/ddnsserver"
-go build $buildtags -o $rootdir/out/ddnsserver
+go build -mod=mod $buildtags -o $rootdir/out/ddnsserver
 
 
-rm -rf $rootdir/$asset_name
-rm -rf $rootdir/assets.web.go
+#rm -rf $rootdir/$asset_name
+#rm -rf $rootdir/assets.web.go
 
 echo ""
 echo "---------打包-success----------------" 

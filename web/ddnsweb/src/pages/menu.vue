@@ -1,6 +1,11 @@
 <template>
   <div id="app">
-    <nav-menu :themes="themes" :menus="menus" :logo="logo" :systemName="systemName" ref="NewTap"> </nav-menu>
+    <nav-menu 
+    :themes="themes" 
+    :menus="menus" 
+    :logo="logo" 
+    :systemName="systemName" 
+    ref="NewTap"> </nav-menu>
   </div>
 </template>
 <script>
@@ -15,6 +20,7 @@ export default {
       userinfo: { name: '', role: "管理员" },
       indexUrl: "/home",
       items: [],
+      menus:[{}],
     }
   },
   components: { //注册插件

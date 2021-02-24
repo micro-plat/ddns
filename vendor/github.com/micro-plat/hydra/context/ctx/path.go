@@ -1,7 +1,6 @@
 package ctx
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -76,11 +75,9 @@ func (c *rpath) GetPageAndTag() (page string, tag string, ok bool) {
 	}
 	group := c.GetGroup()
 	if group == "" {
-		fmt.Println("1.GetPageAndTag", page, tag, ok)
 		return page, tag, ok
 	}
 	page = strings.TrimPrefix(page, "/"+group)
-	fmt.Println("2.GetPageAndTag", page, tag, ok)
 	return page, tag, ok
 
 }
