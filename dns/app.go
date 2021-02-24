@@ -6,7 +6,6 @@ import (
 	"github.com/micro-plat/hydra"
 	"github.com/micro-plat/hydra/conf/server/api"
 	"github.com/micro-plat/hydra/conf/server/cron"
-	"github.com/micro-plat/hydra/conf/server/header"
 	"github.com/micro-plat/hydra/hydra/servers/http"
 
 	vchttp "github.com/micro-plat/hydra/conf/vars/http"
@@ -28,8 +27,7 @@ func init() {
 		hydra.Conf.Custom(DDNS, conf.New(conf.WithTimeout(5, 5))).
 			Sub(conf.TypeNodeName, conf.NewNames("8.8.8.8", "114.114.114.114"))
 
-		hydra.Conf.Web(":80", api.WithTimeout(300, 300), api.WithDNS("ddns.com")).
-			Header(header.WithCrossDomain())
+		hydra.Conf.Web("80", api.WithTimeout(300, 300), api.WithDNS("ddns.com"))
 
 		hydra.Conf.CRON(cron.WithMasterSlave())
 		hydra.Conf.Vars().HTTP("http", vchttp.WithRequestTimeout(30), vchttp.WithConnTimeout(30))

@@ -3,7 +3,6 @@
 *.test
 # conf/
 node_modules
-web/static.go
-web/web.go
+assets.web.go
 out/
 logs/

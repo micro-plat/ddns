@@ -1,5 +1,11 @@
-cd web/ddnsweb
+#!/bin/sh
 
+rootdir=$(pwd)
+asset_name=static.zip
+
+pkg=$1
+
+cd $rootdir/web/ddnsweb
 
 echo "1. 安装依赖：npm install"
 npm  install
@@ -8,44 +14,63 @@ echo "2. 打包项目：npm run build"
 npm run build
 
 echo "3. 压缩：dist/static"
-cd dist/static
-zip -q -r ../../../static.zip *
+cd  $rootdir/web/ddnsweb/dist/static
+zip -q -r $rootdir/$asset_name *
 
-echo "4. 生成资源文件:web/static.go" 
-cd ../../../
-go-bindata -o=./static.go -pkg=web static.zip
-sleep 1s
 
-echo "5. 写入静态文件配置内容到web/web.go" 
-echo '
-package web
+echo "5. 写入静态文件配置内容到assets.web.go"  
+
+echo "
+//+build !none
+
+package main
 
 import (
-	"path"
+	_ \"embed\"
 
-	"github.com/micro-plat/hydra"
-	"github.com/micro-plat/hydra/conf/server/static"
+	\"github.com/micro-plat/hydra\"
+	\"github.com/micro-plat/hydra/conf/server/header\"
+	\"github.com/micro-plat/hydra/conf/server/static\"
+	\"github.com/micro-plat/hydra/global\"
+
 )
 
+//go:embed ${asset_name}
+var archiveBytes []byte
+var archiveName = \"${asset_name}\"
 func init() {
 	hydra.OnReady(func() {
-		for _, v := range AssetNames() {
-			ext := path.Ext(v)
-			embed, _ := Asset(v)
-			hydra.Conf.GetWeb().Static(static.WithArchiveByEmbed(embed, ext))
+		staticOpts:= []static.Option{}
+		staticOpts = append(staticOpts, static.WithEmbedBytes(archiveName, archiveBytes))
+		serverStatic := hydra.Conf.GetWeb().Static(staticOpts...)
+		if global.Def.IsDebug() {
+			serverStatic.Header(header.WithCrossDomain())
 		}
 	})
 }
-' > ./web.go
+" > $rootdir/assets.web.go 
+
+sleep 1 
+
 
 echo "5. 删除打包文件和压缩文件" 
-rm -rf ddnsweb/dist/
-rm -rf static.zip
-cd ..
-
+rm -rf $rootdir/web/ddnsweb/dist/
 
 echo "6. 编译项目"
-go build  -o out/ddnsserver
+
+buildtags=" -tags=none "
+if [ "$pkg" != "none" ] ; then 
+	buildtags=""
+fi
+
+mkdir -p $rootdir/out
+
+echo "go build $buildtags -o $rootdir/out/ddnsserver"
+go build $buildtags -o $rootdir/out/ddnsserver
+
+
+rm -rf $rootdir/$asset_name
+rm -rf $rootdir/assets.web.go
 
 echo ""
 echo "---------打包-success----------------" 
