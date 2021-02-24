@@ -1,6 +1,8 @@
 package ctx
 
 import (
+	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/micro-plat/hydra/conf"
@@ -8,6 +10,7 @@ import (
 	"github.com/micro-plat/hydra/conf/server/router"
 	"github.com/micro-plat/hydra/context"
 	"github.com/micro-plat/hydra/global"
+	"github.com/micro-plat/hydra/services"
 	"github.com/micro-plat/lib4go/encoding"
 	"github.com/micro-plat/lib4go/types"
 )
@@ -51,6 +54,37 @@ func (c *rpath) Params() types.XMap {
 func (c *rpath) GetService() string {
 	return c.ctx.GetService()
 }
+
+//GetGroup 获取当前服务注册的group名
+func (c *rpath) GetGroup() string {
+	return services.Def.GetGroup(c.appConf.GetServerConf().GetServerType(), c.GetService())
+}
+
+//GetPageAndTag 获取服务对应的页面路径与tag标签(page:静态文件prefix+服务原始注册路径,tag：对象中的函数名)
+func (c *rpath) GetPageAndTag() (page string, tag string, ok bool) {
+
+	//获取服务注册的路径名，tag标签
+	tp := c.appConf.GetServerConf().GetServerType()
+	page, tag, ok = services.Def.GetRawPathAndTag(tp, c.GetService())
+	if !ok {
+		return "", "", false
+	}
+
+	//处理tag为空时，获取当前method
+	if tag == "" {
+		tag = c.ctx.GetMethod()
+	}
+	group := c.GetGroup()
+	if group == "" {
+		fmt.Println("1.GetPageAndTag", page, tag, ok)
+		return page, tag, ok
+	}
+	page = strings.TrimPrefix(page, "/"+group)
+	fmt.Println("2.GetPageAndTag", page, tag, ok)
+	return page, tag, ok
+
+}
+
 func (c *rpath) GetEncoding() string {
 	if c.encoding != "" {
 		return c.encoding
@@ -59,6 +93,7 @@ func (c *rpath) GetEncoding() string {
 	//从router配置获取
 	routerObj, err := c.GetRouter()
 	if err != nil {
+		c.encoding = encoding.UTF8
 		return c.encoding
 	}
 	if c.encoding = routerObj.Encoding; c.encoding != "" {
@@ -83,9 +118,10 @@ func (c *rpath) GetEncoding() string {
 
 //GetRouter 获取路由信息
 func (c *rpath) GetRouter() (*router.Router, error) {
-	switch c.appConf.GetServerConf().GetServerType() {
+	tp := c.appConf.GetServerConf().GetServerType()
+	switch tp {
 	case global.API, global.Web, global.WS:
-		routerObj, err := c.appConf.GetRouterConf()
+		routerObj, err := services.GetRouter(tp).GetRouters()
 		if err != nil {
 			return nil, err
 		}
@@ -97,8 +133,8 @@ func (c *rpath) GetRouter() (*router.Router, error) {
 }
 
 //GetURL 获取请求路径
-func (c *rpath) GetURL() string {
-	return c.ctx.GetURL().String()
+func (c *rpath) GetURL() *url.URL {
+	return c.ctx.GetURL()
 }
 
 //GetRequestPath 获取请求路径
