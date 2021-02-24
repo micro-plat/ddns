@@ -71,8 +71,8 @@ mkdir -p $rootdir/out
 
 cd $rootdir
 
-echo "go build $buildtags -o $rootdir/out/ddnsserver"
-go build -mod=mod $buildtags -o $rootdir/out/ddnsserver
+echo "go build $buildtags -o $rootdir/out/ddns"
+go build -mod=mod $buildtags -o $rootdir/out/ddns
 
 
 #rm -rf $rootdir/$asset_name
