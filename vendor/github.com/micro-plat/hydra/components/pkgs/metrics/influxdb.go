@@ -113,10 +113,12 @@ func (r *reporter) makeClient() (err error) {
 func (r *reporter) run() {
 	pingTicker := time.Tick(time.Second * 5)
 	var intervalTicker int64
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
 LOOP:
 	for {
 		select {
-		case <-time.After(time.Second):
+		case <-tick.C:
 			if r.done {
 				break LOOP
 			}
@@ -223,8 +225,8 @@ func (r *reporter) send() error {
 					"m1":      ms.Rate1(),
 					"m5":      ms.Rate5(),
 					"m15":     ms.Rate15(),
-					"mean":    ms.RateMean(),
-					"fstatus": types.GetInt64(tags["status"]),
+					"mean":    types.GetInt64(fmt.Sprintf("%.f", ms.RateMean())),
+					"fstatus": types.GetInt32(tags["status"]),
 				},
 				Time: now,
 			})

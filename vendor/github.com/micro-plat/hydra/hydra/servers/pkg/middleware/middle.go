@@ -13,10 +13,12 @@ import (
 
 type imiddle interface {
 	Next()
-	FullPath() string
 	Find(path string) bool
-	Service(string)
+	GetRouterPath() string
 	ClearAuth(c ...bool) bool
+	GetWriter() interface{}
+	SetWriter(w interface{})
+	GetType() string
 }
 
 //IMiddleContext 中间件转换器，在context.IContext中扩展next函数
@@ -56,7 +58,7 @@ func (h Handler) GinFunc(tps ...string) gin.HandlerFunc {
 				global.Def.Log().Errorf("-----[Recovery] panic recovered:\n%s\n%s 构建context出现错误", err, global.GetStack())
 				c.AbortWithError(http.StatusNotExtended, fmt.Errorf("%v", "Server Error"))
 			}
-			rawCtx := &ginCtx{Context: c}
+			rawCtx := &ginCtx{Context: c, tp: tps[0]}
 			nctx := ctx.NewCtx(rawCtx, tps[0])
 			nctx.Meta().SetValue("__context_", c)
 			v = NewMiddleContext(nctx, rawCtx)

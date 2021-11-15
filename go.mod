@@ -2,9 +2,9 @@ module github.com/micro-plat/ddns
 
 go 1.16
 
-replace github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra
+//replace github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra
 
-replace github.com/micro-plat/lib4go => ../../../github.com/micro-plat/lib4go
+//replace github.com/micro-plat/lib4go => ../../../github.com/micro-plat/lib4go
 
 require (
 	github.com/PuerkitoBio/goquery v1.6.0
@@ -12,8 +12,8 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/golang/mock v1.4.3 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/micro-plat/hydra v1.0.5
-	github.com/micro-plat/lib4go v1.0.10
+	github.com/micro-plat/hydra v1.2.0
+	github.com/micro-plat/lib4go v1.1.10
 	github.com/miekg/dns v1.1.35
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect

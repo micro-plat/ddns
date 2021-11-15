@@ -23,6 +23,7 @@ func (b *buffer) Close() error {
 	return nil
 }
 
+//NewDispCtx NewDispCtx
 func NewDispCtx() *dispCtx {
 	return &dispCtx{Context: &dispatcher.Context{}}
 }
@@ -31,11 +32,11 @@ type dispCtx struct {
 	*dispatcher.Context
 	service       string
 	needClearAuth bool
+	servicePrefix string
 }
 
-//
-func (g *dispCtx) GetRouterPath() string {
-	return g.Context.Request.GetName()
+func (g *dispCtx) GetType() string {
+	return "dispatcher"
 }
 func (g *dispCtx) GetParams() map[string]interface{} {
 	params := make(map[string]interface{})
@@ -141,6 +142,16 @@ func (g *dispCtx) GetFile(fileKey string) (string, io.ReadCloser, int64, error) 
 func (g *dispCtx) GetHTTPReqResp() (*http.Request, http.ResponseWriter) {
 	return nil, nil
 }
+
+//GetWriter 获取writer
+func (g *dispCtx) GetWriter() interface{} {
+	return g.Writer
+}
+
+//GetWriter 获取writer
+func (g *dispCtx) SetWriter(w interface{}) {
+	g.Writer = w.(dispatcher.ResponseWriter)
+}
 func (g *dispCtx) ClearAuth(c ...bool) bool {
 	if len(c) == 0 {
 		return g.needClearAuth
@@ -152,6 +163,7 @@ func (g *dispCtx) ClearAuth(c ...bool) bool {
 func (g *dispCtx) ServeContent(filepath string, fs http.FileSystem) int {
 	return http.StatusOK
 }
-func (g *dispCtx) FullPath() string {
-	return g.service
+
+func (g *dispCtx) GetRouterPath() string {
+	return g.Context.FullPath()
 }

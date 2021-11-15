@@ -14,8 +14,8 @@ import (
 
 type ginCtx struct {
 	*gin.Context
+	tp            string
 	once          sync.Once
-	service       string
 	needClearAuth bool
 }
 
@@ -37,16 +37,11 @@ func (g *ginCtx) GetParams() map[string]interface{} {
 	}
 	return params
 }
+
 func (g *ginCtx) GetRouterPath() string {
 	return g.Context.FullPath()
 }
 
-func (g *ginCtx) GetService() string {
-	return g.service
-}
-func (g *ginCtx) Service(service string) {
-	g.service = service
-}
 func (g *ginCtx) GetBody() io.ReadCloser {
 	g.load()
 	return g.Request.Body
@@ -69,7 +64,7 @@ func (g *ginCtx) GetCookies() []*http.Cookie {
 	return g.Request.Cookies()
 }
 func (g *ginCtx) Find(path string) bool {
-	return g.FullPath() == path
+	return g.GetRouterPath() == path
 
 }
 func (g *ginCtx) Next() {
@@ -124,6 +119,19 @@ func (g *ginCtx) GetFile(fileKey string) (string, io.ReadCloser, int64, error) {
 func (g *ginCtx) GetHTTPReqResp() (*http.Request, http.ResponseWriter) {
 	return g.Request, g.Writer
 }
+
+//GetWriter 获取writer
+func (g *ginCtx) GetWriter() interface{} {
+	return g.Writer
+}
+
+//GetWriter 获取writer
+func (g *ginCtx) SetWriter(w interface{}) {
+	g.Writer = w.(gin.ResponseWriter)
+}
+func (g *ginCtx) GetType() string {
+	return "gin"
+}
 func (g *ginCtx) ClearAuth(c ...bool) bool {
 	if len(c) == 0 {
 		return g.needClearAuth
@@ -147,8 +155,8 @@ func (g *ginCtx) ServeContent(filepath string, fs http.FileSystem) (status int) 
 		return
 	}
 
-	status = http.StatusOK
 	http.ServeContent(g.Writer, g.Request, filepath, d.ModTime(), f)
+	status = g.Writer.Status()
 	return
 }
 

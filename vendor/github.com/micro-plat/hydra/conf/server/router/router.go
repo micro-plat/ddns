@@ -15,7 +15,7 @@ const TypeNodeName = "router"
 var Methods = []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions, http.MethodHead}
 
 //DefMethods 普通服务包含的路由
-var DefMethods = []string{http.MethodGet, http.MethodPost}
+var DefMethods = []string{http.MethodGet, http.MethodPost, http.MethodOptions}
 
 //GetWSHomeRouter 获取ws主页路由
 func GetWSHomeRouter() *Router {
@@ -28,7 +28,9 @@ func GetWSHomeRouter() *Router {
 
 //Routers 路由信息
 type Routers struct {
-	Routers []*Router `json:"routers,omitempty" toml:"routers,omitempty"`
+	Routers       []*Router `json:"routers,omitempty" toml:"routers,omitempty"`
+	ServicePrefix string    `json:"-"`
+	tree          *Node     `json:"-"`
 }
 
 func (h *Routers) String() string {
@@ -76,7 +78,7 @@ func (r *Router) GetEncoding() string {
 }
 func (r *Router) String() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%-16s %-32s %-32s %v", r.Path, r.Service, strings.Join(r.Action, " "), r.Pages))
+	sb.WriteString(fmt.Sprintf("%-16s %-32s %-32s %v %s", r.Path, r.Service, strings.Join(r.Action, " "), r.Pages, r.Encoding))
 	return sb.String()
 }
 
@@ -85,37 +87,35 @@ func (r *Router) IsUTF8() bool {
 	return strings.ToLower(r.GetEncoding()) == "utf-8"
 }
 
-// //IsUTF8 是否是UTF8编码
-// func (r *Router) String() string {
-// 	bytes, _ := json.Marshal(r)
-// 	return string(bytes)
-// }
+//GetParams 获取路由参数
+func (r *Router) GetParams(path string) map[string]string {
+	return getParams(r.Path, path)
+}
 
 //NewRouters 构建路由
 func NewRouters() *Routers {
 	r := &Routers{
-		Routers: make([]*Router, 0, 1),
+		Routers: make([]*Router, 0),
 	}
 	return r
 }
 
 //Append 添加路由信息
 func (h *Routers) Append(path string, service string, action []string, opts ...Option) *Routers {
-	h.Routers = append(h.Routers, NewRouter(path, service, action, opts...))
+	r := NewRouter(path, service, action, opts...)
+	h.Routers = append(h.Routers, r)
+	h.tree = NewTree(h.GetPath()...)
 	return h
 }
 
 //Match 根据请求路径匹配指定的路由配置
 func (h *Routers) Match(path string, method string) (*Router, error) {
-	if path == "" || method == http.MethodOptions || method == http.MethodHead {
-		return &Router{
-			Path:   path,
-			Action: []string{method},
-		}, nil
+	matchPath, matched := h.tree.Match(path, "")
+	if !matched {
+		return nil, fmt.Errorf("未找到与[%s]匹配的路由", path)
 	}
-
 	for _, r := range h.Routers {
-		if r.Path == path && types.StringContains(r.Action, method) {
+		if r.Path == matchPath && types.StringContains(r.Action, method) {
 			return r, nil
 		}
 	}

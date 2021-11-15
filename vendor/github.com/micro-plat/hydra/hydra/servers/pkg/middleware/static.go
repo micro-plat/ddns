@@ -25,15 +25,13 @@ func Static() Handler {
 		//处理option请求
 		var rpath = ctx.Request().Path().GetRequestPath()
 		var method = ctx.Request().Path().GetMethod()
-
 		//是option则处理业务逻辑
 		if doOption(ctx, static.Has(rpath)) {
 			return
 		}
-
 		//优先后端服务调用
-		var fullPath = ctx.FullPath()
-		if services.Def.Has(ctx.APPConf().GetServerConf().GetServerType(), fullPath, method) {
+		var serverType = ctx.APPConf().GetServerConf().GetServerType()
+		if services.Def.Has(serverType, ctx.Request().Path().GetService(), method) {
 			ctx.Next()
 			return
 		}
@@ -43,20 +41,19 @@ func Static() Handler {
 			ctx.Next()
 			return
 		}
-
 		//读取静态文件
 		ctx.Response().AddSpecial("static")
 		fs, p, err := static.Get(rpath)
 		if err != nil || fs == nil {
-			ctx.Response().Abort(http.StatusNotFound, fmt.Errorf("文件不存在%s", rpath))
+			ctx.Response().Abort(http.StatusNotFound, fmt.Errorf("文件不存在:%s", rpath))
 			return
 		}
 
 		//写入到响应流
 		if strings.HasSuffix(p, ".gz") {
+			ctx.Response().AddSpecial("gz")
 			ctx.Response().Header("Content-Encoding", "gzip")
 		}
 		ctx.Response().File(p, fs)
-		return
 	}
 }

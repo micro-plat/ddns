@@ -49,9 +49,42 @@ func (c *rpath) Params() types.XMap {
 	return c.params
 }
 
+//FormatService 通过GetProcessorConf 格式化服务名
+func (c *rpath) FormatService(service string) string {
+	p, err := c.appConf.GetProcessorConf()
+	if err != nil {
+		return service
+	}
+	return p.FormatService(service)
+}
+
 //GetService 获取服务名称
-func (c *rpath) GetService() string {
-	return c.ctx.GetService()
+func (c *rpath) GetService(path ...string) string {
+	tp := c.appConf.GetServerConf().GetServerType()
+	routerPath := types.GetStringByIndex(path, 0, c.ctx.GetRouterPath())
+	switch tp {
+	case global.API, global.Web, global.WS, global.RPC, global.MQC, global.CRON:
+		r, err := c.GetRouter(routerPath)
+		if err != nil {
+			return ""
+		}
+		return r.Service
+	default:
+		return routerPath
+	}
+}
+
+func (c *rpath) GetRouter(path string) (*router.Router, error) {
+	tp := c.appConf.GetServerConf().GetServerType()
+	routerObj, err := services.GetRouter(tp).GetRouters()
+	if err != nil {
+		return nil, err
+	}
+	router, err := routerObj.Match(path, c.ctx.GetMethod())
+	if err != nil {
+		return nil, err
+	}
+	return router, nil
 }
 
 //GetGroup 获取当前服务注册的group名
@@ -73,13 +106,8 @@ func (c *rpath) GetPageAndTag() (page string, tag string, ok bool) {
 	if tag == "" {
 		tag = c.ctx.GetMethod()
 	}
-	group := c.GetGroup()
-	if group == "" {
-		return page, tag, ok
-	}
-	page = strings.TrimPrefix(page, "/"+group)
-	return page, tag, ok
 
+	return page, tag, ok
 }
 
 func (c *rpath) GetEncoding() string {
@@ -87,13 +115,7 @@ func (c *rpath) GetEncoding() string {
 		return c.encoding
 	}
 
-	//从router配置获取
-	routerObj, err := c.GetRouter()
-	if err != nil {
-		c.encoding = encoding.UTF8
-		return c.encoding
-	}
-	if c.encoding = routerObj.Encoding; c.encoding != "" {
+	if c.encoding = c.getEncoding(); c.encoding != "" {
 		return c.encoding
 	}
 
@@ -113,20 +135,23 @@ func (c *rpath) GetEncoding() string {
 	return c.encoding
 }
 
-//GetRouter 获取路由信息
-func (c *rpath) GetRouter() (*router.Router, error) {
+//getEncoding 获取路由配置的编码
+func (c *rpath) getEncoding() string {
 	tp := c.appConf.GetServerConf().GetServerType()
 	switch tp {
-	case global.API, global.Web, global.WS:
+	case global.API, global.Web, global.WS, global.RPC, global.MQC, global.CRON:
 		routerObj, err := services.GetRouter(tp).GetRouters()
 		if err != nil {
-			return nil, err
+			return ""
 		}
-		return routerObj.Match(c.ctx.GetRouterPath(), c.ctx.GetMethod())
+		router, err := routerObj.Match(c.ctx.GetRouterPath(), c.ctx.GetMethod())
+		if err != nil {
+			return ""
+		}
+		return router.Encoding
 	default:
-		return router.NewRouter(c.ctx.GetRouterPath(), c.ctx.GetRouterPath(), []string{}, router.WithEncoding("utf-8")), nil
+		return ""
 	}
-
 }
 
 //GetURL 获取请求路径

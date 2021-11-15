@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
+	vc "github.com/micro-plat/hydra/conf"
 	"github.com/micro-plat/hydra/conf/server/apm"
 	"github.com/micro-plat/hydra/conf/server/metric"
 )
@@ -22,12 +24,14 @@ func (b BaseBuilder) Sub(name string, s ...interface{}) ISUB {
 	}
 	tp := reflect.TypeOf(s[0])
 	val := reflect.ValueOf(s[0])
-	if tp.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
 	switch tp.Kind() {
 	case reflect.String:
-		b[name] = json.RawMessage([]byte(val.Interface().(string)))
+		str := val.String()
+		if strings.HasPrefix(str, vc.ByInstall) {
+			b[name] = str
+			return b
+		}
+		b[name] = json.RawMessage([]byte(str))
 	case reflect.Struct, reflect.Ptr, reflect.Map:
 		b[name] = val.Interface()
 	default:

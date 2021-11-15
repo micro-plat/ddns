@@ -8,6 +8,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/micro-plat/hydra/conf"
+	"github.com/micro-plat/hydra/conf/pkgs/security"
 )
 
 const (
@@ -38,14 +39,15 @@ const (
 )
 
 //MainConfName 主配置中的关键配置名
-var MainConfName = []string{"address", "status", "rTimeout", "wTimeout", "rhTimeout", "dn"}
+var MainConfName = []string{"address", "status", "rTimeout", "wTimeout", "rhTimeout", "dns"}
 
 //SubConfName 子配置中的关键配置名
-var SubConfName = []string{"router", "metric"}
+var SubConfName = []string{"router", "metric", "processor", "nfs"}
 var validTypes = map[string]bool{"api": true, "web": true, "ws": true}
 
 //Server api server配置信息
 type Server struct {
+	security.ConfEncrypt
 	Address   string `json:"address,omitempty" valid:"port,required" label:"端口号|请输入正确的端口号(1-65535)"`
 	Status    string `json:"status,omitempty" valid:"in(start|stop)"  label:"服务器状态"`
 	RTimeout  int    `json:"rTimeout,omitempty" valid:"range(3|3600)" label:"请求读取超时时间|请输入正确的超时时间(3-3600)"`
