@@ -93,7 +93,7 @@
                 </div>
               </el-col>
             </el-row>
-            <el-row :gutter="24" v-if="!isWeb && isAPI" style="margin-left: 5%">
+            <el-row :gutter="24" v-if="!isWeb && isAPI" style="margin-left: 5%; width: 100%">
               <el-col
                 :span="8"
                 v-for="(item, index) in apiTData"
@@ -115,7 +115,7 @@
                         </div>
                       </el-image>
                     </el-col>
-                    <el-col :span="16" style="display: flex; align-items: flex-start; flex-direction: column">
+                    <el-col :span="16" style="display: flex; align-items: flex-start; flex-direction: column; padding-left: 0px">
                       <el-row :gutter="24" style="font-size: 16px; color: #111111">{{ item.plat }} </el-row>
                     </el-col>
                   </el-row>
@@ -141,17 +141,19 @@
                 </div>
               </el-col>
             </el-row>
-          </div>
-          <div class="page-pagination">
-            <el-pagination
-              background
-              @size-change="handleSizeChange"
-              @current-change="pageChange"
-              :current-page="paging.pi"
-              :page-size="paging.ps"
-              layout="total, prev, pager,next"
-              :total="totalCount"
-            ></el-pagination>
+            <div style="display: flex; flex-direction: column; align-items: center">
+              <div class="page-pagination">
+                <el-pagination
+                  background
+                  @size-change="handleSizeChange"
+                  @current-change="pageChange"
+                  :current-page="paging.pi"
+                  :page-size="paging.ps"
+                  layout="total, prev, pager,next"
+                  :total="totalCount"
+                ></el-pagination>
+              </div>
+            </div>
           </div>
         </el-main>
         <el-aside width="20%" style="background-color: rgb(238, 241, 246)"> </el-aside>
@@ -260,8 +262,8 @@ export default {
               this.totalCount = webIndex
             }
           }
-          if (res.api) {//todo
-            var api = res.api//todo
+          if (res.api) {
+            var api = res.api
             var apiTempData = []
             var apiIndex = 0
             var size = 0
@@ -454,13 +456,13 @@ export default {
 .el-pagination.is-background .el-pager li:not(.disabled).active {
   background-color: #ffecec;
   color: #f56c6c;
-  border: 1px solid #f56c6c;;
+  border: 1px solid #f56c6c;
 }
 /*当前页hover样式*/
 .el-pagination.is-background .el-pager li:not(.disabled).active:hover {
-   background-color: #ffecec;
+  background-color: #ffecec;
   color: #f56c6c;
-  border: 1px solid #f56c6c;;
+  border: 1px solid #f56c6c;
 }
 /*不是当前页其他页码hover样式*/
 .el-pagination.is-background .el-pager li:not(.disabled):hover {

@@ -6,4 +6,6 @@ node_modules
 assets.web.go
 out/
 logs/
+static.go
+static.web.go
 static.zip

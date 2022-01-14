@@ -14,9 +14,9 @@ export default {
   name: 'app',
   data() {
     return {
-      logo: "http://bj.images.cdqykj.cn/sso/4cd16a1b5b36ac980713ce25c3c7ab0f.png",
+      logo: require("../images/logo.png"),//"http://bj.images.cdqykj.cn/sso/4cd16a1b5b36ac980713ce25c3c7ab0f.png",
       themes: "bg-info|bg-info|bg-dark dark-danger", //顶部左侧背景颜色,顶部右侧背景颜色,右边菜单背景颜色
-      systemName: "千行网址系统",  //系统名称
+      systemName: "千行网址导航系统",  //系统名称
       userinfo: { name: '', role: "管理员" },
       indexUrl: "/home",
       items: [],
@@ -63,4 +63,17 @@ export default {
 .navbar-nav {
   display: none;
 }
+.title{
+  left: 0 !important;
+}
+
+
+ .navbar-collapse {
+	margin-left: 300px !important;
+}
+
+.navbar-header {
+	width: 465px !important;
+}
+
 </style>
