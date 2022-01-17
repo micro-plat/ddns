@@ -1,4 +1,4 @@
-package nfs
+package lnfs
 
 import (
 	"encoding/json"
@@ -21,9 +21,9 @@ func (l *local) GetFP(name string) (*eFileFP, bool) {
 }
 
 //GetFPs 获以FP列表
-func (l *local) GetFPs() eFileFPLists {
-	<-l.readyChan
-	list := make(eFileFPLists)
+func (l *local) GetFPs() EFileFPLists {
+	l.nfsChecker.Wait()
+	list := make(EFileFPLists)
 	for k, v := range l.FPS.Items() {
 		list[k] = v.(*eFileFP)
 	}
@@ -44,14 +44,17 @@ func (l *local) FPWrite(content interface{}) error {
 }
 
 //FPRead 读取指纹信息
-func (l *local) FPRead() (eFileFPLists, error) {
-	list := make(eFileFPLists)
+func (l *local) FPRead() (EFileFPLists, error) {
+	list := make(EFileFPLists)
 	buff, err := os.ReadFile(l.fpPath)
 	if os.IsNotExist(err) {
 		return list, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("读取%s失败%w", l.fpPath, err)
+	}
+	if len(buff) == 0 {
+		return list, nil
 	}
 	err = json.Unmarshal(buff, &list)
 	return list, err

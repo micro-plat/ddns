@@ -29,7 +29,7 @@ github.com/d5/tengo/v2/parser
 github.com/d5/tengo/v2/stdlib
 github.com/d5/tengo/v2/stdlib/json
 github.com/d5/tengo/v2/token
-# github.com/dsnet/compress v0.0.1
+# github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5
 github.com/dsnet/compress
 github.com/dsnet/compress/bzip2
 github.com/dsnet/compress/bzip2/internal/sais
@@ -108,7 +108,7 @@ github.com/mholt/archiver
 # github.com/micro-plat/gmq v1.0.1
 github.com/micro-plat/gmq/mqtt
 github.com/micro-plat/gmq/mqtt/client
-# github.com/micro-plat/hydra v1.2.0
+# github.com/micro-plat/hydra v1.2.0 => ../../../github.com/micro-plat/hydra
 ## explicit
 github.com/micro-plat/hydra
 github.com/micro-plat/hydra/components
@@ -209,6 +209,11 @@ github.com/micro-plat/hydra/hydra/servers/pkg/dispatcher
 github.com/micro-plat/hydra/hydra/servers/pkg/dispatcher/render
 github.com/micro-plat/hydra/hydra/servers/pkg/middleware
 github.com/micro-plat/hydra/hydra/servers/pkg/nfs
+github.com/micro-plat/hydra/hydra/servers/pkg/nfs/infs
+github.com/micro-plat/hydra/hydra/servers/pkg/nfs/internal
+github.com/micro-plat/hydra/hydra/servers/pkg/nfs/lnfs
+github.com/micro-plat/hydra/hydra/servers/pkg/nfs/obs
+github.com/micro-plat/hydra/hydra/servers/pkg/nfs/obs/obs
 github.com/micro-plat/hydra/pkgs
 github.com/micro-plat/hydra/registry
 github.com/micro-plat/hydra/registry/pub
@@ -259,6 +264,8 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 ## explicit
 github.com/modern-go/reflect2
+# github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+github.com/nfnt/resize
 # github.com/nwaples/rardecode v1.1.0
 github.com/nwaples/rardecode
 # github.com/pierrec/lz4 v2.6.0+incompatible
@@ -434,3 +441,4 @@ gopkg.in/fsnotify.v1
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 gopkg.in/yaml.v3
+# github.com/micro-plat/hydra => ../../../github.com/micro-plat/hydra

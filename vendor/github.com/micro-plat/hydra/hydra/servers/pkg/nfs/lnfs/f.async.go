@@ -1,4 +1,4 @@
-package nfs
+package lnfs
 
 import (
 	"time"
@@ -28,7 +28,7 @@ func newAsync(l *local, r *remoting) *async {
 		downloadChan:   make(chan *eFileFP, 10000),
 		queryChan:      make(chan struct{}, 1),
 		maxGocoroutine: 10,
-		reportList:     cmap.New(6),
+		reportList:     cmap.New(36),
 	}
 	go m.loopReport()
 	go m.loopQuery()
@@ -39,7 +39,7 @@ func newAsync(l *local, r *remoting) *async {
 }
 
 //DoReport 上报指纹信息
-func (m *async) DoReport(f eFileFPLists) {
+func (m *async) DoReport(f EFileFPLists) {
 	if len(f) == 0 || m.done {
 		return
 	}
@@ -82,7 +82,7 @@ func (m *async) loopReport() {
 			return
 		case <-tk:
 			list := m.reportList.PopAll()
-			nlist := make(eFileFPLists)
+			nlist := make(EFileFPLists)
 			for k, v := range list {
 				nlist[k] = v.(*eFileFP)
 			}

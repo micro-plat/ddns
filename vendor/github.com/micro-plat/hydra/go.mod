@@ -9,7 +9,7 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/clbanning/mxj v1.8.4
 	github.com/d5/tengo/v2 v2.6.2
-	github.com/dsnet/compress v0.0.1 // indirect
+	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
@@ -26,6 +26,7 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/micro-plat/gmq v1.0.1
 	github.com/micro-plat/lib4go v1.1.10
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/profile v1.2.1

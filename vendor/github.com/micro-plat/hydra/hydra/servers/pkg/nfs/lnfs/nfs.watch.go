@@ -1,4 +1,4 @@
-package nfs
+package lnfs
 
 import (
 	"io/fs"
@@ -8,7 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func (l *module) watch() {
+func (l *Module) watch() {
 	if !l.c.Watch {
 		return
 	}
@@ -18,8 +18,8 @@ func (l *module) watch() {
 		trace().error("不支持文件监控", err)
 		return
 	}
-	filepath.WalkDir(l.local.path, func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() || l.local.exclude(d.Name()) {
+	filepath.WalkDir(l.Local.path, func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() || l.Local.exclude(path) {
 			return nil
 		}
 		l.fsWatcher.Add(path)
@@ -29,7 +29,7 @@ func (l *module) watch() {
 	for {
 		select {
 		case ev, ok := <-l.fsWatcher.Events:
-			if !ok || l.done {
+			if !ok || l.Done {
 				return
 			}
 			//监控文件夹变动
@@ -37,11 +37,10 @@ func (l *module) watch() {
 				ev.Op&fsnotify.Write == fsnotify.Write ||
 				ev.Op&fsnotify.Remove == fsnotify.Remove ||
 				ev.Op&fsnotify.Rename == fsnotify.Rename {
-				if l.done {
+				if l.Done {
 					return
 				}
-				_, name := filepath.Split(ev.Name)
-				if l.local.exclude(name) {
+				if l.Local.exclude(ev.Name) {
 					continue
 				}
 				select {
@@ -52,18 +51,18 @@ func (l *module) watch() {
 		}
 	}
 }
-func (l *module) delayCheck() {
+func (l *Module) delayCheck() {
 	tk := time.Tick(time.Second * 10)
 	for {
 		select {
 		case <-tk:
 			select {
 			case _, ok := <-l.checkChan:
-				if !ok || l.done {
+				if !ok || l.Done {
 					return
 				}
-				if l.local.FindChange() {
-					l.async.DoReport(l.local.GetFPs())
+				if l.Local.FindChange() {
+					l.async.DoReport(l.Local.GetFPs())
 				}
 			default:
 			}

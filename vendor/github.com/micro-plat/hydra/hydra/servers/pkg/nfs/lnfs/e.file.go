@@ -1,10 +1,14 @@
-package nfs
+package lnfs
 
-import "github.com/micro-plat/lib4go/types"
+import (
+	"time"
 
-type eFileFPLists map[string]*eFileFP
+	"github.com/micro-plat/lib4go/types"
+)
 
-func (e eFileFPLists) Merge(list eFileFPLists) {
+type EFileFPLists map[string]*eFileFP
+
+func (e EFileFPLists) Merge(list EFileFPLists) {
 	for k, v := range list {
 		if _, ok := e[k]; !ok {
 			e[k] = v
@@ -15,11 +19,11 @@ func (e eFileFPLists) Merge(list eFileFPLists) {
 }
 
 //GetAlives 获取可用于通知所有alive的tp列表
-func (e eFileFPLists) GetAlives(allAliveHosts []string) map[string]eFileFPLists {
+func (e EFileFPLists) GetAlives(allAliveHosts []string) map[string]EFileFPLists {
 	if len(e) == 0 {
 		return nil
 	}
-	list := make(map[string]eFileFPLists, len(allAliveHosts))
+	list := make(map[string]EFileFPLists, len(allAliveHosts))
 	for _, v := range allAliveHosts {
 		list[v] = e
 	}
@@ -29,15 +33,34 @@ func (e eFileFPLists) GetAlives(allAliveHosts []string) map[string]eFileFPLists 
 //eRomotingFileFP 远程文件清单
 type eFileFP struct {
 	Path string `json:"path,omitempty" valid:"required" `
+
+	Name string `json:"name,omitempty" valid:"required"`
+
+	ModTime time.Time `json:"modTime,omitempty" valid:"required"`
+
 	// CRC64 uint64   `json:"crc64,omitempty" valid:"required" `
 	Hosts []string `json:"hosts,omitempty" valid:"required" `
+
+	//文件大小
+	Size int64 `json:"size,omitempty"`
 }
 
 //eFileEntity 文件实体
 type eFileEntity struct {
-	Path   string `json:"path,omitempty" valid:"required"`
-	CRC64  uint64 `json:"crc64,omitempty" valid:"required"`
-	Buffer []byte `json:"buffer,omitempty" valid:"required"`
+	Path    string    `json:"path,omitempty" valid:"required"`
+	ModTime time.Time `json:"modTime,omitempty" valid:"required"`
+	Name    string    `json:"name,omitempty" valid:"required"`
+	Size    int64     `json:"buffer,omitempty" valid:"required"`
+}
+
+type eFileEntityList []*eFileEntity
+
+func (l eFileEntityList) GetMap() map[string]*eFileEntity {
+	mp := make(map[string]*eFileEntity)
+	for _, v := range l {
+		mp[v.Path] = v
+	}
+	return mp
 }
 
 //MergeHosts 合并hosts
@@ -91,7 +114,7 @@ func (e *eFileFP) Has(host string) bool {
 func (e *eFileFP) String() string {
 	return types.ToJSON(e)
 }
-func (e *eFileFP) GetMAP() eFileFPLists {
+func (e *eFileFP) GetMAP() EFileFPLists {
 	return map[string]*eFileFP{
 		e.Path: e,
 	}

@@ -1,10 +1,12 @@
-package nfs
+package lnfs
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/micro-plat/hydra/hydra/servers/pkg/nfs/infs"
 )
 
 //SaveFile 保存文件
@@ -55,74 +57,96 @@ func (l *local) FWrite(name string, buff []byte) error {
 }
 
 //FList 获取本地所有文件清单
-func (l *local) FList(path string) ([]string, error) {
+func (l *local) FList(path string) (eFileEntityList, eDirEntityList, error) {
 
 	//文件夹不存在时返回空
 	dirEntity, err := os.ReadDir(path)
 	if os.IsNotExist(err) {
-		return nil, nil
+		return nil, nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("读取目录失败:%s %v", path, err)
+		return nil, nil, nil
 	}
 
 	//查找所有文件
-	list := make([]string, 0, len(dirEntity))
+	list := make([]*eFileEntity, 0, len(dirEntity))
+	dirs := make([]*eDirEntity, 0, 1)
 	for _, entity := range dirEntity {
-		if l.exclude(entity.Name()) {
+
+		//处理目录
+		info, err := entity.Info()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		//处理文件
+		npath := filepath.Join(path, entity.Name())
+		if strings.HasPrefix(npath, filepath.Join(l.path)) {
+			npath = npath[len(filepath.Join(l.path))+1:]
+		}
+
+		if l.exclude(npath) {
 			continue
 		}
 		//处理目录
 		if entity.IsDir() {
-			nlist, err := l.FList(filepath.Join(path, entity.Name()))
+
+			dirs = append(dirs, &eDirEntity{
+				Path:    npath,
+				Name:    entity.Name(),
+				Size:    info.Size(),
+				ModTime: info.ModTime(),
+			})
+
+			//递归处理目录
+			l.fsWatcher.Add(filepath.Join(path, entity.Name()))
+			nlist, ndirs, err := l.FList(filepath.Join(path, entity.Name()))
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			list = append(list, nlist...)
+			dirs = append(dirs, ndirs...)
 			continue
 		}
 
-		//处理文件名称
-		nname := filepath.Join(path, entity.Name())
-		if strings.HasPrefix(nname, filepath.Join(l.path)) {
-			nname = nname[len(filepath.Join(l.path))+1:]
-		}
-		list = append(list, nname)
+		list = append(list, &eFileEntity{
+			Name:    entity.Name(),
+			Path:    npath,
+			Size:    info.Size(),
+			ModTime: info.ModTime(),
+		})
 	}
-	return list, nil
+	return list, dirs, nil
 }
 
-var exclude = []string{".", "~"}
-
-func (l *local) exclude(f string) bool {
-	for _, ex := range exclude {
-		if strings.HasPrefix(f, ex) {
-			return true
-		}
-	}
-	// if strings.HasPrefix(f, filepath.Join(l.path, time.Now().Format("20060102"))) {
-	// 	return true
-	// }
-	return false
-}
 func (l *local) FindChange() bool {
 	//获取本地文件列表
 	change := false
-	lst, err := l.FList(l.path)
+	lst, dir, err := l.FList(l.path)
 	if err != nil {
 		return false
 	}
 
+	//检查目录结构是否相同
+	if !dir.Equal(l.dirs) {
+		return true
+	}
+
 	//处理不一致数据
-	for _, path := range lst {
-		if ok := l.FPS.Has(path); !ok {
+	for _, entity := range lst {
+		if ok := l.FPS.Has(entity.Path); !ok {
 			fp := &eFileFP{
-				Path:  path,
-				Hosts: []string{l.currentAddr},
+				Path:    entity.Path,
+				Size:    entity.Size,
+				ModTime: entity.ModTime,
+				Hosts:   []string{l.currentAddr},
 			}
-			l.FPS.Set(path, fp)
+			l.FPS.Set(entity.Path, fp)
 			change = true
 		}
 	}
 	return change
+}
+func (l *local) exclude(npath string) bool {
+	return infs.Exclude(npath, l.excludes, l.includes...)
 }
